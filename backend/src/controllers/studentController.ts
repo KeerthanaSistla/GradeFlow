@@ -43,12 +43,13 @@ export async function studentLogin(req: AuthRequest, res: Response) {
 
     res.json({
       token,
-      student: {
+      user: {
         _id: student._id,
         rollNumber: student.rollNumber,
         name: student.name,
         section: student.section,
-        departmentId: student.departmentId
+        departmentId: student.departmentId,
+        role: 'student'
       }
     });
   } catch (error: any) {

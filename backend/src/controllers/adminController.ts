@@ -32,10 +32,11 @@ export async function adminLogin(req: AuthRequest, res: Response) {
 
     res.json({
       token,
-      admin: {
+      user: {
         _id: admin._id,
         username: admin.username,
-        role: admin.role
+        name: admin.username,
+        role: 'admin'
       }
     });
   } catch (error: any) {

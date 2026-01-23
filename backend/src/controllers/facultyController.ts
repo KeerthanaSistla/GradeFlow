@@ -43,12 +43,13 @@ export async function facultyLogin(req: AuthRequest, res: Response) {
 
     res.json({
       token,
-      faculty: {
+      user: {
         _id: faculty._id,
         facultyId: faculty.facultyId,
         name: faculty.name,
         designation: faculty.designation,
-        departmentId: faculty.departmentId
+        departmentId: faculty.departmentId,
+        role: 'faculty'
       }
     });
   } catch (error: any) {
