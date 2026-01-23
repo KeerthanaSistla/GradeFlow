@@ -8,6 +8,18 @@ import { GraduationCap, Users, Building2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/services/api";
 
+interface User {
+  _id: string;
+  role: string;
+  name: string;
+  email?: string;
+}
+
+interface LoginResponse {
+  token: string;
+  user: User;
+}
+
 const Login = () => {
   const [role, setRole] = useState<string | null>(null);
   const [username, setUsername] = useState("");
@@ -31,11 +43,13 @@ const Login = () => {
     }
 
     try {
-      const data = await apiService.login({
+      const response = await apiService.login({
         username,
         password
         // Note: Removed role from login - backend determines role from user data
       });
+
+      const data = response as unknown as LoginResponse;
 
       // Store user info
       localStorage.setItem("userRole", data.user.role);

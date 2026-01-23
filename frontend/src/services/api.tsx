@@ -1,23 +1,40 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:4000/api';
+
+interface RequestOptions {
+  method?: string;
+  body?: Record<string, unknown> | FormData;
+  headers?: Record<string, string>;
+}
+
+interface ApiResponse {
+  [key: string]: unknown;
+}
 
 class ApiService {
+  token: string | null;
+
   constructor() {
     this.token = localStorage.getItem('token');
   }
 
-  async request(endpoint, options = {}) {
+  async request(endpoint: string, options: RequestOptions = {}): Promise<ApiResponse> {
     const url = `${API_BASE_URL}${endpoint}`;
-    const config = {
+    const config: RequestInit & { headers?: Record<string, string> } = {
+      method: options.method,
       headers: {
         'Content-Type': 'application/json',
         ...(this.token && { 'Authorization': `Bearer ${this.token}` }),
         ...options.headers,
       },
-      ...options,
     };
 
-    if (options.body && !(options.body instanceof FormData)) {
-      config.body = JSON.stringify(options.body);
+    if (options.body) {
+      if (options.body instanceof FormData) {
+        config.body = options.body;
+        delete (config.headers as Record<string, string>)['Content-Type'];
+      } else {
+        config.body = JSON.stringify(options.body);
+      }
     }
 
     try {
@@ -25,7 +42,7 @@ class ApiService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
-        throw new Error(errorData.message || `HTTP ${response.status}`);
+        throw new Error((errorData as Record<string, unknown>).message as string || `HTTP ${response.status}`);
       }
 
       return await response.json();
@@ -35,52 +52,96 @@ class ApiService {
     }
   }
 
-  // Auth methods
-  async login(credentials) {
-    const data = await this.request('/auth/login', {
+  // Auth methods - Role-based login
+  async adminLogin(credentials: Record<string, unknown>): Promise<ApiResponse> {
+    const data = await this.request('/admin/login', {
       method: 'POST',
       body: credentials,
     });
 
-    if (data.token) {
-      this.token = data.token;
-      localStorage.setItem('token', data.token);
+    if ((data as Record<string, unknown>).token) {
+      this.token = (data as Record<string, unknown>).token as string;
+      localStorage.setItem('token', this.token);
     }
 
     return data;
   }
 
-  async getCurrentUser() {
+  async facultyLogin(credentials: Record<string, unknown>): Promise<ApiResponse> {
+    const data = await this.request('/faculty/login', {
+      method: 'POST',
+      body: credentials,
+    });
+
+    if ((data as Record<string, unknown>).token) {
+      this.token = (data as Record<string, unknown>).token as string;
+      localStorage.setItem('token', this.token);
+    }
+
+    return data;
+  }
+
+  async studentLogin(credentials: Record<string, unknown>): Promise<ApiResponse> {
+    const data = await this.request('/student/login', {
+      method: 'POST',
+      body: credentials,
+    });
+
+    if ((data as Record<string, unknown>).token) {
+      this.token = (data as Record<string, unknown>).token as string;
+      localStorage.setItem('token', this.token);
+    }
+
+    return data;
+  }
+
+  // Generic login (for backward compatibility)
+  async login(credentials: Record<string, unknown>): Promise<ApiResponse> {
+    // Try admin login first (for existing flow)
+    const data = await this.request('/admin/login', {
+      method: 'POST',
+      body: credentials,
+    });
+
+    if ((data as Record<string, unknown>).token) {
+      this.token = (data as Record<string, unknown>).token as string;
+      localStorage.setItem('token', this.token);
+    }
+
+    return data;
+  }
+
+  async getCurrentUser(): Promise<ApiResponse> {
     return this.request('/auth/me');
   }
 
   // Faculty methods
-  async getFacultySubjects() {
+  async getFacultySubjects(): Promise<ApiResponse> {
     return this.request('/faculty/subjects');
   }
 
-  async getAvailableSubjects() {
+  async getAvailableSubjects(): Promise<ApiResponse> {
     return this.request('/faculty/subjects/available');
   }
 
-  async assignSubjectToFaculty(assignmentData) {
+  async assignSubjectToFaculty(assignmentData: Record<string, unknown>): Promise<ApiResponse> {
     return this.request('/faculty/subjects/assign', {
       method: 'POST',
       body: assignmentData,
     });
   }
 
-  async removeSubjectFromFaculty(subjectId) {
+  async removeSubjectFromFaculty(subjectId: string): Promise<ApiResponse> {
     return this.request(`/faculty/subjects/${subjectId}/remove`, {
       method: 'DELETE',
     });
   }
 
-  async getClassStudents(classCode) {
+  async getClassStudents(classCode: string): Promise<ApiResponse> {
     return this.request(`/faculty/classes/${classCode}/students`);
   }
 
-  async uploadBulkMarks(classCode, markType, marksArray) {
+  async uploadBulkMarks(classCode: string, markType: string, marksArray: Array<{ rollNo: string; marks: number }>): Promise<ApiResponse> {
     // Send the whole classCode to the backend and let it parse subject/section
     // robustly. This avoids client-side parsing errors when codes contain '-'.
     return this.request('/faculty/marks/bulk-update', {
@@ -96,7 +157,7 @@ class ApiService {
     });
   }
 
-  async uploadExcelMarks(classCode, markType, file) {
+  async uploadExcelMarks(classCode: string, markType: string, file: File): Promise<ApiResponse> {
     const formData = new FormData();
     formData.append('excelFile', file);
     formData.append('classCode', classCode);
@@ -113,48 +174,48 @@ class ApiService {
   }
 
   // Student methods
-  async getStudentProfile() {
+  async getStudentProfile(): Promise<ApiResponse> {
     return this.request('/students/profile');
   }
 
-  async getStudentMarks(subjectCode) {
+  async getStudentMarks(subjectCode: string): Promise<ApiResponse> {
     return this.request(`/students/marks/${subjectCode}`);
   }
 
   // Admin methods
-  async getDepartments() {
+  async getDepartments(): Promise<ApiResponse> {
     return this.request('/admin/departments');
   }
 
-  async createDepartment(departmentData) {
+  async createDepartment(departmentData: Record<string, unknown>): Promise<ApiResponse> {
     return this.request('/admin/departments', {
       method: 'POST',
       body: departmentData,
     });
   }
 
-  async addSubjectToDepartment(departmentId, subjectData) {
+  async addSubjectToDepartment(departmentId: string, subjectData: Record<string, unknown>): Promise<ApiResponse> {
     return this.request(`/admin/departments/${departmentId}/subjects`, {
       method: 'POST',
       body: subjectData,
     });
   }
 
-  async addFacultyToDepartment(departmentId, facultyData) {
+  async addFacultyToDepartment(departmentId: string, facultyData: Record<string, unknown>): Promise<ApiResponse> {
     return this.request(`/admin/departments/${departmentId}/faculty`, {
       method: 'POST',
       body: facultyData,
     });
   }
 
-  async addClassToDepartment(departmentId, classData) {
+  async addClassToDepartment(departmentId: string, classData: Record<string, unknown>): Promise<ApiResponse> {
     return this.request(`/admin/departments/${departmentId}/classes`, {
       method: 'POST',
       body: classData,
     });
   }
 
-  async createStudentAndAddToClass(departmentId, classId, studentData) {
+  async createStudentAndAddToClass(departmentId: string, classId: string, studentData: Record<string, unknown>): Promise<ApiResponse> {
     return this.request(`/admin/departments/${departmentId}/classes/${classId}/create-student`, {
       method: 'POST',
       body: studentData,
@@ -162,7 +223,7 @@ class ApiService {
   }
 
   // Bulk upload methods
-  async bulkAddSubjects(departmentId, file, semester) {
+  async bulkAddSubjects(departmentId: string, file: File, semester: string): Promise<ApiResponse> {
     const formData = new FormData();
     formData.append('excelFile', file);
     formData.append('semester', semester);
@@ -177,7 +238,7 @@ class ApiService {
     });
   }
 
-  async bulkAddFaculty(departmentId, file) {
+  async bulkAddFaculty(departmentId: string, file: File): Promise<ApiResponse> {
     const formData = new FormData();
     formData.append('excelFile', file);
 
@@ -191,7 +252,7 @@ class ApiService {
     });
   }
 
-  async bulkAddStudents(departmentId, classId, file) {
+  async bulkAddStudents(departmentId: string, classId: string, file: File): Promise<ApiResponse> {
     const formData = new FormData();
     formData.append('excelFile', file);
 
@@ -206,19 +267,19 @@ class ApiService {
   }
 
   // Delete methods
-  async deleteSubject(departmentId, subjectId) {
+  async deleteSubject(departmentId: string, subjectId: string): Promise<ApiResponse> {
     return this.request(`/admin/departments/${departmentId}/subjects/${subjectId}`, {
       method: 'DELETE',
     });
   }
 
-  async deleteFaculty(departmentId, facultyId) {
+  async deleteFaculty(departmentId: string, facultyId: string): Promise<ApiResponse> {
     return this.request(`/admin/departments/${departmentId}/faculty/${facultyId}`, {
       method: 'DELETE',
     });
   }
 
-  async deleteStudent(departmentId, classId, studentId) {
+  async deleteStudent(departmentId: string, classId: string, studentId: string): Promise<ApiResponse> {
     return this.request(`/admin/departments/${departmentId}/classes/${classId}/students/${studentId}`, {
       method: 'DELETE',
     });

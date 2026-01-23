@@ -7,6 +7,7 @@ import Login from "./pages/Login.tsx";
 import StudentDashboard from "./pages/StudentDashboard.tsx";
 import FacultyDashboard from "./pages/FacultyDashboard.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
+import DepartmentPage from "./pages/DepartmentPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import "./App.css";
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/student" element={<StudentDashboard />} />
           <Route path="/faculty" element={<FacultyDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/department/:departmentId" element={<DepartmentPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

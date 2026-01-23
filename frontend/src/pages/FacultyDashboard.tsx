@@ -561,7 +561,7 @@ const FacultyDashboard = () => {
                             id="sections"
                             placeholder="e.g., A,B,C"
                             value={assignmentSections}
-                            onChange={(e) => setAssignmentSections(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAssignmentSections(e.target.value)}
                           />
                         </div>
                         <div className="space-y-2">
@@ -570,7 +570,7 @@ const FacultyDashboard = () => {
                             id="semester"
                             placeholder="e.g., 3"
                             value={assignmentSemester}
-                            onChange={(e) => setAssignmentSemester(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAssignmentSemester(e.target.value)}
                           />
                         </div>
                         <div className="space-y-2">
@@ -579,7 +579,7 @@ const FacultyDashboard = () => {
                             id="academic-year"
                             placeholder="e.g., 2023-24"
                             value={assignmentAcademicYear}
-                            onChange={(e) => setAssignmentAcademicYear(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAssignmentAcademicYear(e.target.value)}
                           />
                         </div>
                       </div>
@@ -758,7 +758,7 @@ const FacultyDashboard = () => {
                                   max={getTestOptions().find(t => t.value === selectedTest)?.max}
                                   placeholder="0"
                                   value={bulkMarks[student.rollNo] || ""}
-                                  onChange={(e) => handleBulkMarkChange(student.rollNo, e.target.value)}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBulkMarkChange(student.rollNo, e.target.value)}
                                   className="max-w-[120px] h-11"
                                 />
                               </div>
