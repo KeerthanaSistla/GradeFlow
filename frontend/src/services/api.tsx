@@ -10,6 +10,13 @@ interface ApiResponse {
   [key: string]: unknown;
 }
 
+interface Department {
+  _id: string;
+  name: string;
+  abbreviation?: string;
+  createdAt?: string;
+}
+
 class ApiService {
   token: string | null;
 
@@ -183,8 +190,9 @@ class ApiService {
   }
 
   // Admin methods
-  async getDepartments(): Promise<ApiResponse> {
-    return this.request('/admin/departments');
+  async getDepartments(): Promise<Department[]> {
+    const data = await this.request('/admin/departments');
+    return data as unknown as Department[];
   }
 
   async createDepartment(departmentData: Record<string, unknown>): Promise<ApiResponse> {

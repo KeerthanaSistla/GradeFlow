@@ -49,19 +49,7 @@ export async function adminLogin(req: AuthRequest, res: Response) {
  */
 export async function getDepartments(req: AuthRequest, res: Response) {
   try {
-    const departments = await Department.find()
-      .populate({
-        path: 'faculty',
-        model: 'Faculty'
-      })
-      .populate({
-        path: 'subjects',
-        model: 'Subject'
-      })
-      .populate({
-        path: 'classes',
-        model: 'Class'
-      });
+    const departments = await Department.find().select('-passwordHash');
 
     res.json(departments);
   } catch (error: any) {
