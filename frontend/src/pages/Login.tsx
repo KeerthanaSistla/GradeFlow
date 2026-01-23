@@ -76,7 +76,7 @@ const Login = () => {
 
   if (!role) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-info to-accent p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-info to-accent">
         <div className="w-full max-w-4xl">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
