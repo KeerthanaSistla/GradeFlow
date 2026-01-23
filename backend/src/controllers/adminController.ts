@@ -245,3 +245,96 @@ export async function addClassToDepartment(req: AuthRequest, res: Response) {
     res.status(500).json({ error: error.message });
   }
 }
+
+/**
+ * Delete faculty from department
+ */
+export async function deleteFacultyFromDepartment(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId, facultyId } = req.params;
+
+    // Check if faculty exists
+    const faculty = await Faculty.findOne({
+      _id: facultyId,
+      departmentId
+    });
+
+    if (!faculty) {
+      return res.status(404).json({ error: 'Faculty not found' });
+    }
+
+    // Delete faculty
+    await Faculty.findByIdAndDelete(facultyId);
+
+    // Delete associated auth record
+    await UserAuth.deleteOne({
+      role: 'FACULTY',
+      referenceId: facultyId
+    });
+
+    res.json({ message: 'Faculty deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Update faculty details
+ */
+export async function updateFacultyDetails(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId, facultyId } = req.params;
+    const { name, email, mobile, designation } = req.body;
+
+    // Check if faculty exists
+    const faculty = await Faculty.findOne({
+      _id: facultyId,
+      departmentId
+    });
+
+    if (!faculty) {
+      return res.status(404).json({ error: 'Faculty not found' });
+    }
+
+    // Update faculty
+    if (name) faculty.name = name;
+    if (email) faculty.email = email;
+    if (mobile) faculty.mobile = mobile;
+    if (designation) faculty.designation = designation;
+
+    await faculty.save();
+
+    res.json({
+      message: 'Faculty updated successfully',
+      faculty
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Delete class from department
+ */
+export async function deleteClassFromDepartment(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId, classId } = req.params;
+
+    // Check if class exists
+    const classObj = await Section.findOne({
+      _id: classId,
+      departmentId
+    });
+
+    if (!classObj) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    // Delete class
+    await Section.findByIdAndDelete(classId);
+
+    res.json({ message: 'Class deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}

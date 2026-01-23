@@ -320,6 +320,19 @@ class ApiService {
     });
   }
 
+  async updateFaculty(departmentId: string, facultyId: string, facultyData: Record<string, unknown>): Promise<ApiResponse> {
+    return this.request(`/admin/departments/${departmentId}/faculty/${facultyId}`, {
+      method: 'PUT',
+      body: facultyData,
+    });
+  }
+
+  async deleteClass(departmentId: string, classId: string): Promise<ApiResponse> {
+    return this.request(`/admin/departments/${departmentId}/classes/${classId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async deleteStudent(departmentId: string, classId: string, studentId: string): Promise<ApiResponse> {
     return this.request(`/admin/departments/${departmentId}/classes/${classId}/students/${studentId}`, {
       method: 'DELETE',
