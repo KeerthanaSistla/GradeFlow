@@ -73,7 +73,7 @@ const DepartmentPage = () => {
     email: "",
     mobile: "",
     facultyId: "",
-    role: "Assistant Professor"
+    role: "Professor"
   });
   const [newClass, setNewClass] = useState({
     section: "",
@@ -151,7 +151,7 @@ const DepartmentPage = () => {
         email: "",
         mobile: "",
         facultyId: "",
-        role: "Assistant Professor"
+        role: "Professor"
       });
       loadDepartment();
     } catch (error: any) {
@@ -372,7 +372,6 @@ const DepartmentPage = () => {
       </div>
     );
   }
-
   // Group faculty by designation
   const facultyByRole = department.faculty?.reduce((acc: Record<string, Faculty[]>, faculty: Faculty) => {
     const roleKey = faculty.designation || 'Other';
@@ -382,6 +381,15 @@ const DepartmentPage = () => {
     acc[roleKey].push(faculty);
     return acc;
   }, {}) || {};
+
+  // Sort faculty designations in specific order
+  const designationOrder = ['Professor', 'Associate Professor', 'Assistant Professor'];
+  const sortedFacultyByRole = Object.entries(facultyByRole).sort((a, b) => {
+    const indexA = designationOrder.indexOf(a[0]);
+    const indexB = designationOrder.indexOf(b[0]);
+    // If designation is not in the order list, put it at the end
+    return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+  });
 
   // Group subjects by semester
   const subjectsBySemester = department.subjects?.reduce((acc: Record<string, Subject[]>, subject: Subject) => {
@@ -520,7 +528,6 @@ const DepartmentPage = () => {
                             <SelectItem value="Professor">Professor</SelectItem>
                             <SelectItem value="Associate Professor">Associate Professor</SelectItem>
                             <SelectItem value="Assistant Professor">Assistant Professor</SelectItem>
-                            <SelectItem value="Lecturer">Lecturer</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -558,7 +565,7 @@ const DepartmentPage = () => {
                 <p className="text-gray-600">Add faculty members to get started.</p>
               </div>
             ) : (
-              Object.entries(facultyByRole).map(([role, facultyList]) => (
+              sortedFacultyByRole.map(([role, facultyList]) => (
                 <div key={role} className="space-y-4">
                   <h3 className="text-lg font-semibold text-primary">{role}</h3>
                   <Table>
