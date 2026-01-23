@@ -10,11 +10,39 @@ interface ApiResponse {
   [key: string]: unknown;
 }
 
-interface Department {
+export interface Department {
   _id: string;
   name: string;
   abbreviation?: string;
   createdAt?: string;
+  faculty?: Array<{
+    _id: string;
+    facultyId: string;
+    name: string;
+    email?: string;
+    mobile?: string;
+    designation?: string;
+  }>;
+  subjects?: Array<{
+    _id: string;
+    code: string;
+    name: string;
+    abbreviation?: string;
+    semester: string;
+  }>;
+  classes?: Array<{
+    _id: string;
+    section: string;
+    year: number;
+    semester: number;
+    students?: Array<{
+      _id: string;
+      rollNo: string;
+      name: string;
+      email?: string;
+      mobile?: string;
+    }>;
+  }>;
 }
 
 class ApiService {
@@ -193,6 +221,11 @@ class ApiService {
   async getDepartments(): Promise<Department[]> {
     const data = await this.request('/admin/departments');
     return data as unknown as Department[];
+  }
+
+  async getDepartmentById(departmentId: string): Promise<Department> {
+    const data = await this.request(`/admin/departments/${departmentId}`);
+    return data as unknown as Department;
   }
 
   async createDepartment(departmentData: Record<string, unknown>): Promise<ApiResponse> {

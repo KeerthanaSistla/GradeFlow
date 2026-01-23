@@ -3,6 +3,8 @@ import { AuthRequest } from '../middleware/auth';
 import Admin from '../models/Admin';
 import UserAuth from '../models/UserAuth';
 import Department from '../models/Department';
+import Faculty from '../models/Faculty';
+import Section from '../models/Section';
 import { hashPassword, verifyPassword, generateToken } from '../utils/auth';
 
 /**
@@ -52,6 +54,37 @@ export async function getDepartments(req: AuthRequest, res: Response) {
     const departments = await Department.find().select('-passwordHash');
 
     res.json(departments);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Get single department with all relations
+ */
+export async function getDepartmentById(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId } = req.params;
+
+    const department = await Department.findById(departmentId).select('-passwordHash');
+    if (!department) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    // Fetch related data
+    const faculty = await Faculty.find({ departmentId }).select('-createdAt -updatedAt');
+    const subjects = await (await import('../models/Subject')).default.find({ departmentId }).select('-createdAt -updatedAt');
+    const classes = await Section.find({ departmentId }).select('-createdAt -updatedAt');
+
+    // Populate the department object with relations
+    const deptWithRelations = {
+      ...department.toObject(),
+      faculty,
+      subjects,
+      classes
+    };
+
+    res.json(deptWithRelations);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -123,6 +156,91 @@ export async function deleteDepartment(req: AuthRequest, res: Response) {
     }
 
     res.json({ message: 'Department deleted' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Add faculty to department
+ */
+export async function addFacultyToDepartment(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId } = req.params;
+    const { facultyId, name, email, mobile, role } = req.body;
+
+    if (!facultyId || !name || !email) {
+      return res.status(400).json({ error: 'Faculty ID, name, and email required' });
+    }
+
+    // Check if department exists
+    const dept = await Department.findById(departmentId);
+    if (!dept) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    // Create faculty
+    const faculty = new Faculty({
+      facultyId,
+      name,
+      email,
+      mobile,
+      departmentId,
+      designation: role || 'Assistant Professor'
+    });
+
+    await faculty.save();
+
+    // Create auth record for faculty
+    const userAuth = new UserAuth({
+      role: 'FACULTY',
+      referenceId: faculty._id,
+      passwordHash: await hashPassword('password123') // Default password
+    });
+
+    await userAuth.save();
+
+    res.status(201).json({
+      message: 'Faculty added successfully',
+      faculty
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Add class/section to department
+ */
+export async function addClassToDepartment(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId } = req.params;
+    const { section, year, semester } = req.body;
+
+    if (!section || !year || semester === undefined) {
+      return res.status(400).json({ error: 'Section, year, and semester required' });
+    }
+
+    // Check if department exists
+    const dept = await Department.findById(departmentId);
+    if (!dept) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    // Create section/class
+    const sectionObj = new Section({
+      section,
+      year,
+      semester,
+      departmentId
+    });
+
+    await sectionObj.save();
+
+    res.status(201).json({
+      message: 'Class added successfully',
+      class: sectionObj
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

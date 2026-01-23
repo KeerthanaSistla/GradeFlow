@@ -9,15 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Building2, Plus, LogOut, Loader2, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/services/api";
-
-interface Department {
-  _id: string;
-  name: string;
-  code: string;
-  faculty?: any[];
-  subjects?: any[];
-  classes?: any[];
-}
+import type { Department } from "@/services/api";
 
 const AdminDashboard = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -33,7 +25,7 @@ const AdminDashboard = () => {
   // Form states
   const [newDepartment, setNewDepartment] = useState({
     name: "",
-    code: ""
+    abbreviation: ""
   });
 
   useEffect(() => {
@@ -44,7 +36,7 @@ const AdminDashboard = () => {
     setFilteredDepartments(
       departments.filter(dept =>
         dept.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        dept.code.toLowerCase().includes(searchQuery.toLowerCase())
+        (dept.abbreviation?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
       )
     );
   }, [departments, searchQuery]);
@@ -99,7 +91,7 @@ const AdminDashboard = () => {
       });
       setNewDepartment({
         name: "",
-        code: ""
+        abbreviation: ""
       });
       loadDepartments();
     } catch (error: any) {
@@ -192,11 +184,11 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="department-code">Department Code</Label>
+                  <Label htmlFor="department-abbreviation">Department Code</Label>
                   <Input
-                    id="department-code"
-                    value={newDepartment.code}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewDepartment({...newDepartment, code: e.target.value})}
+                    id="department-abbreviation"
+                    value={newDepartment.abbreviation}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewDepartment({...newDepartment, abbreviation: e.target.value})}
                     placeholder="e.g., CSE"
                     required
                   />
@@ -218,7 +210,7 @@ const AdminDashboard = () => {
                   <Building2 className="w-6 h-6 text-primary" />
                   <span>{dept.name}</span>
                 </CardTitle>
-                <CardDescription>{dept.code}</CardDescription>
+                <CardDescription>{dept.abbreviation || 'N/A'}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">

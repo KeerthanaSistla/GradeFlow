@@ -11,15 +11,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Building2, Users, BookOpen, GraduationCap, Plus, LogOut, Loader2, Trash2, Edit, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiService } from "@/services/api";
+import { apiService, type Department } from "@/services/api";
 
 interface Faculty {
   _id: string;
   facultyId: string;
   name: string;
-  email: string;
+  email?: string;
   mobile?: string;
-  role: string;
+  designation?: string;
 }
 
 interface Subject {
@@ -44,15 +44,6 @@ interface Student {
   name: string;
   email?: string;
   mobile?: string;
-}
-
-interface Department {
-  _id: string;
-  name: string;
-  code: string;
-  faculty?: Faculty[];
-  subjects?: Subject[];
-  classes?: Class[];
 }
 
 const DepartmentPage = () => {
@@ -102,13 +93,7 @@ const DepartmentPage = () => {
 
   const loadDepartment = async () => {
     try {
-      const data = await apiService.getDepartments();
-      const depts = Array.isArray(data) ? data : (data as Record<string, unknown>).departments as Department[];
-      const dept = depts.find((d: Department) => d._id === departmentId);
-      if (!dept) {
-        navigate('/admin');
-        return;
-      }
+      const dept = await apiService.getDepartmentById(departmentId!);
       setDepartment(dept);
     } catch (error: any) {
       console.error('Load department error:', error);
@@ -388,12 +373,13 @@ const DepartmentPage = () => {
     );
   }
 
-  // Group faculty by role
+  // Group faculty by designation
   const facultyByRole = department.faculty?.reduce((acc: Record<string, Faculty[]>, faculty: Faculty) => {
-    if (!acc[faculty.role]) {
-      acc[faculty.role] = [];
+    const roleKey = faculty.designation || 'Other';
+    if (!acc[roleKey]) {
+      acc[roleKey] = [];
     }
-    acc[faculty.role].push(faculty);
+    acc[roleKey].push(faculty);
     return acc;
   }, {}) || {};
 
@@ -416,7 +402,7 @@ const DepartmentPage = () => {
               <Building2 className="w-8 h-8" />
               <div>
                 <h1 className="text-2xl font-bold">{department.name}</h1>
-                <p className="text-sm text-white/90">Department Code: {department.code}</p>
+                <p className="text-sm text-white/90">Department Code: {department.abbreviation || 'N/A'}</p>
               </div>
             </div>
             <div className="flex space-x-4">
