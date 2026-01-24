@@ -86,6 +86,14 @@ const DepartmentPage = () => {
     email: "",
     mobile: ""
   });
+  const [editingFaculty, setEditingFaculty] = useState<Faculty | null>(null);
+  const [editFacultyData, setEditFacultyData] = useState({
+    name: "",
+    email: "",
+    mobile: "",
+    designation: ""
+  });
+  const [showEditFacultyDialog, setShowEditFacultyDialog] = useState(false);
 
   useEffect(() => {
     loadDepartment();
@@ -306,6 +314,39 @@ const DepartmentPage = () => {
     }
   };
 
+  const handleEditFaculty = (faculty: Faculty) => {
+    setEditingFaculty(faculty);
+    setEditFacultyData({
+      name: faculty.name,
+      email: faculty.email || "",
+      mobile: faculty.mobile || "",
+      designation: faculty.designation || ""
+    });
+    setShowEditFacultyDialog(true);
+  };
+
+  const handleUpdateFaculty = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!department || !editingFaculty) return;
+
+    try {
+      await apiService.updateFaculty(department._id, editingFaculty._id, editFacultyData);
+      toast({
+        title: "Success",
+        description: "Faculty updated successfully",
+      });
+      setShowEditFacultyDialog(false);
+      setEditingFaculty(null);
+      loadDepartment();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update faculty",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteFaculty = async (facultyId: string) => {
     if (!department) return;
 
@@ -454,6 +495,62 @@ const DepartmentPage = () => {
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Faculty Members</h2>
               <div className="flex space-x-2">
+                <Dialog open={showEditFacultyDialog} onOpenChange={setShowEditFacultyDialog}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Edit Faculty Member</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdateFaculty} className="space-y-4">
+                      <div>
+                        <Label htmlFor="edit-faculty-name">Full Name</Label>
+                        <Input
+                          id="edit-faculty-name"
+                          value={editFacultyData.name}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditFacultyData({...editFacultyData, name: e.target.value})}
+                          placeholder="e.g., Dr. John Doe"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-faculty-designation">Designation</Label>
+                        <Select 
+                          value={editFacultyData.designation} 
+                          onValueChange={(value: string) => setEditFacultyData({...editFacultyData, designation: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select designation" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Professor">Professor</SelectItem>
+                            <SelectItem value="Associate Professor">Associate Professor</SelectItem>
+                            <SelectItem value="Assistant Professor">Assistant Professor</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-faculty-email">Email</Label>
+                        <Input
+                          id="edit-faculty-email"
+                          type="email"
+                          value={editFacultyData.email}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditFacultyData({...editFacultyData, email: e.target.value})}
+                          placeholder="e.g., john.doe@college.edu"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-faculty-mobile">Mobile</Label>
+                        <Input
+                          id="edit-faculty-mobile"
+                          value={editFacultyData.mobile}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditFacultyData({...editFacultyData, mobile: e.target.value})}
+                          placeholder="e.g., +91 9876543210"
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">Update Faculty</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="outline">
@@ -587,7 +684,11 @@ const DepartmentPage = () => {
                           <TableCell>{faculty.mobile || '-'}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button variant="outline" size="sm">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditFaculty(faculty)}
+                              >
                                 <Edit className="w-4 h-4" />
                               </Button>
                               <Button

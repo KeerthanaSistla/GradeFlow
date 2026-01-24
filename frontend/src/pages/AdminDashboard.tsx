@@ -214,17 +214,17 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
+                  <div className="flex items-center justify-between">
                     <span>Faculty:</span>
-                    <Badge variant="secondary" className="ml-2">{dept.faculty?.length || 0}</Badge>
+                    <Badge variant="secondary">{dept.faculty?.length || 0}</Badge>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex items-center justify-between">
                     <span>Subjects:</span>
-                    <Badge variant="secondary" className="ml-2">{dept.subjects?.length || 0}</Badge>
+                    <Badge variant="secondary">{dept.subjects?.length || 0}</Badge>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex items-center justify-between">
                     <span>Classes:</span>
-                    <Badge variant="secondary" className="ml-2">{dept.classes?.length || 0}</Badge>
+                    <Badge variant="secondary">{dept.classes?.length || 0}</Badge>
                   </div>
                 </div>
               </CardContent>
