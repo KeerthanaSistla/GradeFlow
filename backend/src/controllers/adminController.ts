@@ -338,3 +338,96 @@ export async function deleteClassFromDepartment(req: AuthRequest, res: Response)
     res.status(500).json({ error: error.message });
   }
 }
+
+/**
+ * Bulk add faculty to department from Excel file
+ */
+export async function bulkAddFacultyToDepartment(req: AuthRequest & { file?: Express.Multer.File }, res: Response) {
+  try {
+    const { departmentId } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Excel file required' });
+    }
+
+    // Check if department exists
+    const dept = await Department.findById(departmentId);
+    if (!dept) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    // Parse Excel file
+    const XLSX = require('xlsx');
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+
+    const facultyAdded = [];
+    const errors = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i] as any;
+
+      try {
+        // Validate required fields
+        if (!row.Name || !row.Email || !row['Faculty ID']) {
+          errors.push(`Row ${i + 2}: Missing required fields (Name, Email, Faculty ID)`);
+          continue;
+        }
+
+        // Check if faculty already exists
+        const existingFaculty = await Faculty.findOne({
+          $or: [
+            { facultyId: row['Faculty ID'] },
+            { email: row.Email }
+          ]
+        });
+
+        if (existingFaculty) {
+          errors.push(`Row ${i + 2}: Faculty with ID ${row['Faculty ID']} or email ${row.Email} already exists`);
+          continue;
+        }
+
+        // Create faculty
+        const faculty = new Faculty({
+          facultyId: row['Faculty ID'],
+          name: row.Name,
+          email: row.Email,
+          mobile: row.Mobile || '',
+          departmentId,
+          designation: row.Role || 'Assistant Professor'
+        });
+
+        await faculty.save();
+
+        // Create auth record for faculty
+        const userAuth = new UserAuth({
+          role: 'FACULTY',
+          referenceId: faculty._id,
+          passwordHash: await hashPassword('password123') // Default password
+        });
+
+        await userAuth.save();
+
+        facultyAdded.push({
+          facultyId: faculty.facultyId,
+          name: faculty.name,
+          email: faculty.email
+        });
+
+      } catch (error: any) {
+        errors.push(`Row ${i + 2}: ${error.message}`);
+      }
+    }
+
+    res.status(201).json({
+      message: `Successfully added ${facultyAdded.length} faculty members`,
+      added: facultyAdded,
+      errors: errors.length > 0 ? errors : undefined
+    });
+
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}

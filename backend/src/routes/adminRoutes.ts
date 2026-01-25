@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import {
   adminLogin,
@@ -11,10 +12,30 @@ import {
   deleteFacultyFromDepartment,
   updateFacultyDetails,
   addClassToDepartment,
-  deleteClassFromDepartment
+  deleteClassFromDepartment,
+  bulkAddFacultyToDepartment
 } from '../controllers/adminController';
 
 const router = Router();
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    // Accept only Excel files
+    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+        file.mimetype === 'application/vnd.ms-excel' ||
+        file.originalname.endsWith('.xlsx') ||
+        file.originalname.endsWith('.xls')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only Excel files are allowed'));
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
 
 // Public
 router.post('/login', adminLogin);
@@ -28,6 +49,7 @@ router.delete('/departments/:departmentId', authMiddleware, requireRole(['ADMIN'
 
 // Faculty management
 router.post('/departments/:departmentId/faculty', authMiddleware, requireRole(['ADMIN']), addFacultyToDepartment);
+router.post('/departments/:departmentId/faculty/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), bulkAddFacultyToDepartment);
 router.delete('/departments/:departmentId/faculty/:facultyId', authMiddleware, requireRole(['ADMIN']), deleteFacultyFromDepartment);
 router.put('/departments/:departmentId/faculty/:facultyId', authMiddleware, requireRole(['ADMIN']), updateFacultyDetails);
 
