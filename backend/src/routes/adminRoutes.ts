@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { authMiddleware, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole, AuthRequest } from '../middleware/auth';
 import {
   adminLogin,
   getDepartments,
@@ -49,7 +49,7 @@ router.delete('/departments/:departmentId', authMiddleware, requireRole(['ADMIN'
 
 // Faculty management
 router.post('/departments/:departmentId/faculty', authMiddleware, requireRole(['ADMIN']), addFacultyToDepartment);
-router.post('/departments/:departmentId/faculty/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), bulkAddFacultyToDepartment);
+router.post('/departments/:departmentId/faculty/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), (req, res) => bulkAddFacultyToDepartment(req as AuthRequest & { file?: Express.Multer.File }, res));
 router.delete('/departments/:departmentId/faculty/:facultyId', authMiddleware, requireRole(['ADMIN']), deleteFacultyFromDepartment);
 router.put('/departments/:departmentId/faculty/:facultyId', authMiddleware, requireRole(['ADMIN']), updateFacultyDetails);
 
