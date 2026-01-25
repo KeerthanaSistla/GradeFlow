@@ -718,33 +718,65 @@ const DepartmentPage = () => {
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Semester
+                    Add Subject
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Add New Semester</DialogTitle>
+                    <DialogTitle>Add New Subject</DialogTitle>
                     <DialogDescription>
-                      Create a new semester section for subjects.
+                      Add a new subject to the department.
                     </DialogDescription>
                   </DialogHeader>
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    toast({
-                      title: "Info",
-                      description: "Semester sections are created automatically when adding subjects.",
-                    });
-                  }} className="space-y-4">
+                  <form onSubmit={handleAddSubject} className="space-y-4">
                     <div>
-                      <Label htmlFor="semester-number">Semester Number</Label>
+                      <Label htmlFor="subject-code">Subject Code</Label>
                       <Input
-                        id="semester-number"
-                        type="number"
-                        placeholder="e.g., 5"
+                        id="subject-code"
+                        value={newSubject.code}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, code: e.target.value})}
+                        placeholder="e.g., 22CSC21"
                         required
                       />
                     </div>
-                    <Button type="submit" className="w-full">Create Semester</Button>
+                    <div>
+                      <Label htmlFor="subject-name">Subject Name</Label>
+                      <Input
+                        id="subject-name"
+                        value={newSubject.name}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, name: e.target.value})}
+                        placeholder="e.g., Software Engineering"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="subject-abbreviation">Abbreviation</Label>
+                      <Input
+                        id="subject-abbreviation"
+                        value={newSubject.abbreviation}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, abbreviation: e.target.value})}
+                        placeholder="e.g., SE"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="subject-semester">Semester</Label>
+                      <Select
+                        value={newSubject.semester}
+                        onValueChange={(value: string) => setNewSubject({...newSubject, semester: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select semester" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 8 }, (_, i) => i + 1).map((sem) => (
+                            <SelectItem key={sem} value={sem.toString()}>
+                              Semester {sem}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button type="submit" className="w-full">Add Subject</Button>
                   </form>
                 </DialogContent>
               </Dialog>

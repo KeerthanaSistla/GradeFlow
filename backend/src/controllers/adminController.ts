@@ -340,13 +340,184 @@ export async function deleteClassFromDepartment(req: AuthRequest, res: Response)
 }
 
 /**
- * Bulk add faculty to department from Excel file
+ * Add subject to department
  */
-export async function bulkAddFacultyToDepartment(req: AuthRequest & { file?: Express.Multer.File }, res: Response) {
+export async function addSubjectToDepartment(req: AuthRequest, res: Response) {
   try {
     const { departmentId } = req.params;
+    const { code, name, abbreviation, semester } = req.body;
 
-    if (!req.file) {
+    if (!code || !name || !semester) {
+      return res.status(400).json({ error: 'Subject code, name, and semester required' });
+    }
+
+    // Check if department exists
+    const dept = await Department.findById(departmentId);
+    if (!dept) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    // Import Subject model
+    const Subject = (await import('../models/Subject')).default;
+
+    // Check if subject code already exists in department
+    const existingSubject = await Subject.findOne({
+      subjectCode: code,
+      departmentId
+    });
+
+    if (existingSubject) {
+      return res.status(400).json({ error: 'Subject code already exists in this department' });
+    }
+
+    // Create subject
+    const subject = new Subject({
+      subjectCode: code,
+      name,
+      abbreviation,
+      semester: parseInt(semester),
+      departmentId
+    });
+
+    await subject.save();
+
+    res.status(201).json({
+      message: 'Subject added successfully',
+      subject
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Delete subject from department
+ */
+export async function deleteSubjectFromDepartment(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId, subjectId } = req.params;
+
+    // Import Subject model
+    const Subject = (await import('../models/Subject')).default;
+
+    // Check if subject exists
+    const subject = await Subject.findOne({
+      _id: subjectId,
+      departmentId
+    });
+
+    if (!subject) {
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+
+    // Delete subject
+    await Subject.findByIdAndDelete(subjectId);
+
+    res.json({ message: 'Subject deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Bulk add subjects to department from Excel file
+ */
+export async function bulkAddSubjectsToDepartment(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId } = req.params;
+    const { semester } = req.body;
+    const file = (req as any).file;
+
+    if (!file) {
+      return res.status(400).json({ error: 'Excel file required' });
+    }
+
+    if (!semester) {
+      return res.status(400).json({ error: 'Semester required' });
+    }
+
+    // Check if department exists
+    const dept = await Department.findById(departmentId);
+    if (!dept) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    // Import Subject model
+    const Subject = (await import('../models/Subject')).default;
+
+    // Parse Excel file
+    const XLSX = require('xlsx');
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+
+    const subjectsAdded = [];
+    const errors = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i] as any;
+
+      try {
+        // Validate required fields
+        if (!row['Subject Code'] || !row['Subject Name']) {
+          errors.push(`Row ${i + 2}: Missing required fields (Subject Code, Subject Name)`);
+          continue;
+        }
+
+        // Check if subject already exists
+        const existingSubject = await Subject.findOne({
+          subjectCode: row['Subject Code'],
+          departmentId
+        });
+
+        if (existingSubject) {
+          errors.push(`Row ${i + 2}: Subject with code ${row['Subject Code']} already exists`);
+          continue;
+        }
+
+        // Create subject
+        const subject = new Subject({
+          subjectCode: row['Subject Code'],
+          name: row['Subject Name'],
+          abbreviation: row['Abbreviation'] || '',
+          semester: parseInt(semester),
+          departmentId
+        });
+
+        await subject.save();
+
+        subjectsAdded.push({
+          subjectCode: subject.subjectCode,
+          name: subject.name,
+          abbreviation: subject.abbreviation
+        });
+
+      } catch (error: any) {
+        errors.push(`Row ${i + 2}: ${error.message}`);
+      }
+    }
+
+    res.status(201).json({
+      message: `Successfully added ${subjectsAdded.length} subjects`,
+      added: subjectsAdded,
+      errors: errors.length > 0 ? errors : undefined
+    });
+
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Bulk add faculty to department from Excel file
+ */
+export async function bulkAddFacultyToDepartment(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId } = req.params;
+    const file = (req as any).file;
+
+    if (!file) {
       return res.status(400).json({ error: 'Excel file required' });
     }
 

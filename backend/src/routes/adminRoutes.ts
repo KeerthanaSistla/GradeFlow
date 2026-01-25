@@ -13,6 +13,9 @@ import {
   updateFacultyDetails,
   addClassToDepartment,
   deleteClassFromDepartment,
+  addSubjectToDepartment,
+  deleteSubjectFromDepartment,
+  bulkAddSubjectsToDepartment,
   bulkAddFacultyToDepartment
 } from '../controllers/adminController';
 
@@ -56,5 +59,10 @@ router.put('/departments/:departmentId/faculty/:facultyId', authMiddleware, requ
 // Class management
 router.post('/departments/:departmentId/classes', authMiddleware, requireRole(['ADMIN']), addClassToDepartment);
 router.delete('/departments/:departmentId/classes/:classId', authMiddleware, requireRole(['ADMIN']), deleteClassFromDepartment);
+
+// Subject management
+router.post('/departments/:departmentId/subjects', authMiddleware, requireRole(['ADMIN']), addSubjectToDepartment);
+router.post('/departments/:departmentId/subjects/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), (req, res) => bulkAddSubjectsToDepartment(req as AuthRequest & { file?: Express.Multer.File }, res));
+router.delete('/departments/:departmentId/subjects/:subjectId', authMiddleware, requireRole(['ADMIN']), deleteSubjectFromDepartment);
 
 export default router;
