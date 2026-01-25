@@ -116,16 +116,18 @@ const DepartmentPage = () => {
     }
   };
 
-  const handleAddSubject = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddSubject = async (e: React.FormEvent<HTMLFormElement>, semester?: string) => {
     e.preventDefault();
     if (!department) return;
+
+    const sem = semester || newSubject.semester;
 
     try {
       await apiService.addSubjectToDepartment(department._id, {
         subjectCode: newSubject.code,
         name: newSubject.name,
         abbreviation: newSubject.abbreviation,
-        semester: newSubject.semester
+        semester: sem
       });
       toast({
         title: "Success",
@@ -844,7 +846,7 @@ const DepartmentPage = () => {
                           <DialogHeader>
                             <DialogTitle>Add Subject to Semester {semester}</DialogTitle>
                           </DialogHeader>
-                          <form onSubmit={handleAddSubject} className="space-y-4">
+                          <form onSubmit={(e) => handleAddSubject(e, semester)} className="space-y-4">
                             <div>
                               <Label htmlFor="subject-code">Subject Code</Label>
                               <Input
@@ -874,11 +876,6 @@ const DepartmentPage = () => {
                                 placeholder="e.g., SE"
                               />
                             </div>
-                            <Input
-                              type="hidden"
-                              value={semester}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, semester: e.target.value})}
-                            />
                             <Button type="submit" className="w-full">Add Subject</Button>
                           </form>
                         </DialogContent>
