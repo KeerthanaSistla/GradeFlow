@@ -16,7 +16,9 @@ import {
   addSubjectToDepartment,
   deleteSubjectFromDepartment,
   bulkAddSubjectsToDepartment,
-  bulkAddFacultyToDepartment
+  bulkAddFacultyToDepartment,
+  createBatchForDepartment,
+  getBatchesForDepartment
 } from '../controllers/adminController';
 
 const router = Router();
@@ -64,5 +66,9 @@ router.delete('/departments/:departmentId/classes/:classId', authMiddleware, req
 router.post('/departments/:departmentId/subjects', authMiddleware, requireRole(['ADMIN']), addSubjectToDepartment);
 router.post('/departments/:departmentId/subjects/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), bulkAddSubjectsToDepartment);
 router.delete('/departments/:departmentId/subjects/:subjectId', authMiddleware, requireRole(['ADMIN']), deleteSubjectFromDepartment);
+
+// Batch management
+router.post('/departments/:departmentId/batches', authMiddleware, requireRole(['ADMIN']), createBatchForDepartment);
+router.get('/departments/:departmentId/batches', authMiddleware, requireRole(['ADMIN']), getBatchesForDepartment);
 
 export default router;

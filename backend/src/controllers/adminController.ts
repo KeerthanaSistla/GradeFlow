@@ -5,6 +5,8 @@ import UserAuth from '../models/UserAuth';
 import Department from '../models/Department';
 import Faculty from '../models/Faculty';
 import Section from '../models/Section';
+import Batch from '../models/Batch';
+import AcademicYear from '../models/AcademicYear';
 import { hashPassword, verifyPassword, generateToken } from '../utils/auth';
 
 /**
@@ -41,6 +43,76 @@ export async function adminLogin(req: AuthRequest, res: Response) {
         role: 'admin'
       }
     });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Create a batch for department
+ */
+export async function createBatchForDepartment(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId } = req.params;
+    const { startYear, endYear } = req.body;
+
+    if (!startYear || !endYear) {
+      return res.status(400).json({ error: 'Start year and end year required' });
+    }
+
+    // Check if department exists
+    const dept = await Department.findById(departmentId);
+    if (!dept) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    const batchName = `${startYear}-${endYear}`;
+
+    // Check if batch already exists
+    const existingBatch = await Batch.findOne({
+      name: batchName,
+      departmentId
+    });
+
+    if (existingBatch) {
+      return res.status(400).json({ error: 'Batch already exists' });
+    }
+
+    // Create batch
+    const batch = new Batch({
+      name: batchName,
+      startYear: parseInt(startYear),
+      endYear: parseInt(endYear),
+      departmentId
+    });
+
+    await batch.save();
+
+    res.status(201).json({
+      message: 'Batch created successfully',
+      batch
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Get batches for department
+ */
+export async function getBatchesForDepartment(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId } = req.params;
+
+    // Check if department exists
+    const dept = await Department.findById(departmentId);
+    if (!dept) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    const batches = await Batch.find({ departmentId }).select('-createdAt -updatedAt');
+
+    res.json(batches);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -222,10 +294,10 @@ export async function addFacultyToDepartment(req: AuthRequest, res: Response) {
 export async function addClassToDepartment(req: AuthRequest, res: Response) {
   try {
     const { departmentId } = req.params;
-    const { section, year, semester } = req.body;
+    const { section, year, semester, batchId } = req.body;
 
-    if (!section || !year || semester === undefined) {
-      return res.status(400).json({ error: 'Section, year, and semester required' });
+    if (!section || !year || semester === undefined || !batchId) {
+      return res.status(400).json({ error: 'Section, year, semester, and batchId required' });
     }
 
     // Check if department exists
@@ -234,12 +306,19 @@ export async function addClassToDepartment(req: AuthRequest, res: Response) {
       return res.status(404).json({ error: 'Department not found' });
     }
 
+    // Check if batch exists
+    const batch = await Batch.findById(batchId);
+    if (!batch) {
+      return res.status(404).json({ error: 'Batch not found' });
+    }
+
     // Create section/class
     const sectionObj = new Section({
-      section,
-      year,
-      semester,
-      departmentId
+      name: section,
+      departmentId,
+      batchId,
+      year: parseInt(year),
+      semester: parseInt(semester)
     });
 
     await sectionObj.save();

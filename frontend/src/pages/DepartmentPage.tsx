@@ -46,12 +46,26 @@ interface Student {
   mobile?: string;
 }
 
+interface Batch {
+  _id: string;
+  name: string;
+  startYear: number;
+  endYear: number;
+}
+
 const DepartmentPage = () => {
   const { departmentId } = useParams();
   const [department, setDepartment] = useState<Department | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("subjects");
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
+  const [selectedBatch, setSelectedBatch] = useState<string>("all");
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [showAddBatchDialog, setShowAddBatchDialog] = useState(false);
+  const [newBatch, setNewBatch] = useState({
+    startYear: "",
+    endYear: ""
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -97,6 +111,7 @@ const DepartmentPage = () => {
 
   useEffect(() => {
     loadDepartment();
+    loadBatches();
   }, [departmentId]);
 
   const loadDepartment = async () => {
@@ -180,10 +195,30 @@ const DepartmentPage = () => {
 
   const handleAddClass = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!department) return;
+    if (!department || !selectedBatch || selectedBatch === "all") {
+      toast({
+        title: "Error",
+        description: "Please select a batch first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const batch = batches.find(b => b.name === selectedBatch);
+    if (!batch) {
+      toast({
+        title: "Error",
+        description: "Selected batch not found",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      await apiService.addClassToDepartment(department._id, newClass);
+      await apiService.addClassToDepartment(department._id, {
+        ...newClass,
+        batchId: batch._id
+      });
       toast({
         title: "Success",
         description: "Class added successfully",
@@ -391,6 +426,48 @@ const DepartmentPage = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to delete student",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddBatch = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!department) return;
+
+    try {
+      await apiService.request(`/admin/departments/${departmentId}/batches`, {
+        method: 'POST',
+        body: newBatch
+      });
+      toast({
+        title: "Success",
+        description: `Batch ${newBatch.startYear}-${newBatch.endYear} created successfully`,
+      });
+      setShowAddBatchDialog(false);
+      setNewBatch({
+        startYear: "",
+        endYear: ""
+      });
+      loadBatches();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create batch",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadBatches = async () => {
+    try {
+      const response = await apiService.request(`/admin/departments/${departmentId}/batches`);
+      setBatches(response);
+    } catch (error: any) {
+      console.error('Load batches error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load batches",
         variant: "destructive",
       });
     }
@@ -721,72 +798,121 @@ const DepartmentPage = () => {
           <TabsContent value="subjects" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Subjects by Semester</h2>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Subject
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Add New Subject</DialogTitle>
-                    <DialogDescription>
-                      Add a new subject to the department.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleAddSubject} className="space-y-4">
-                    <div>
-                      <Label htmlFor="subject-code">Subject Code</Label>
-                      <Input
-                        id="subject-code"
-                        value={newSubject.code}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, code: e.target.value})}
-                        placeholder="e.g., 22CSC21"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="subject-name">Subject Name</Label>
-                      <Input
-                        id="subject-name"
-                        value={newSubject.name}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, name: e.target.value})}
-                        placeholder="e.g., Software Engineering"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="subject-abbreviation">Abbreviation</Label>
-                      <Input
-                        id="subject-abbreviation"
-                        value={newSubject.abbreviation}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, abbreviation: e.target.value})}
-                        placeholder="e.g., SE"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="subject-semester">Semester</Label>
-                      <Select
-                        value={newSubject.semester}
-                        onValueChange={(value: string) => setNewSubject({...newSubject, semester: value})}
-                      >
-                        <SelectTrigger id="subject-semester">
-                          <SelectValue placeholder="Select semester" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: 8 }, (_, i) => i + 1).map((sem) => (
-                            <SelectItem key={sem} value={sem.toString()}>
-                              Semester {sem}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button type="submit" className="w-full">Add Subject</Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
+              <div className="flex space-x-2">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Bulk Upload
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Bulk Upload Subjects</DialogTitle>
+                      <DialogDescription>
+                        Upload an Excel file with subject data. Select the semester for the subjects.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleBulkAddSubjects} className="space-y-4">
+                      <div>
+                        <Label htmlFor="bulk-subject-semester">Semester</Label>
+                        <Select
+                          value={bulkSubjectSemester}
+                          onValueChange={setBulkSubjectSemester}
+                        >
+                          <SelectTrigger id="bulk-subject-semester">
+                            <SelectValue placeholder="Select semester" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 8 }, (_, i) => i + 1).map((sem) => (
+                              <SelectItem key={sem} value={sem.toString()}>
+                                Semester {sem}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="bulk-subject-file">Excel File</Label>
+                        <Input
+                          id="bulk-subject-file"
+                          type="file"
+                          accept=".xlsx,.xls"
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBulkSubjectFile(e.target.files?.[0] || null)}
+                          required
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">Upload Subjects</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Subject
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Add New Subject</DialogTitle>
+                      <DialogDescription>
+                        Add a new subject to the department.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleAddSubject} className="space-y-4">
+                      <div>
+                        <Label htmlFor="subject-code">Subject Code</Label>
+                        <Input
+                          id="subject-code"
+                          value={newSubject.code}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, code: e.target.value})}
+                          placeholder="e.g., 22CSC21"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="subject-name">Subject Name</Label>
+                        <Input
+                          id="subject-name"
+                          value={newSubject.name}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, name: e.target.value})}
+                          placeholder="e.g., Software Engineering"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="subject-abbreviation">Abbreviation</Label>
+                        <Input
+                          id="subject-abbreviation"
+                          value={newSubject.abbreviation}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, abbreviation: e.target.value})}
+                          placeholder="e.g., SE"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="subject-semester">Semester</Label>
+                        <Select
+                          value={newSubject.semester}
+                          onValueChange={(value: string) => setNewSubject({...newSubject, semester: value})}
+                        >
+                          <SelectTrigger id="subject-semester">
+                            <SelectValue placeholder="Select semester" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 8 }, (_, i) => i + 1).map((sem) => (
+                              <SelectItem key={sem} value={sem.toString()}>
+                                Semester {sem}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button type="submit" className="w-full">Add Subject</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
             {Object.keys(subjectsBySemester).length === 0 ? (
@@ -800,87 +926,51 @@ const DepartmentPage = () => {
                 <div key={semester} className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold text-primary">Semester {semester}</h3>
-                    <div className="flex space-x-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Upload className="w-4 h-4 mr-2" />
-                            Bulk Upload
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md">
-                          <DialogHeader>
-                            <DialogTitle>Bulk Upload Subjects for Semester {semester}</DialogTitle>
-                            <DialogDescription>
-                              Upload an Excel file with subject data.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <form onSubmit={handleBulkAddSubjects} className="space-y-4">
-                            <div>
-                              <Label htmlFor="bulk-subject-file">Excel File</Label>
-                              <Input
-                                id="bulk-subject-file"
-                                type="file"
-                                accept=".xlsx,.xls"
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBulkSubjectFile(e.target.files?.[0] || null)}
-                                required
-                              />
-                            </div>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Subject
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Add Subject to Semester {semester}</DialogTitle>
+                        </DialogHeader>
+                        <form onSubmit={(e) => handleAddSubject(e, semester)} className="space-y-4">
+                          <div>
+                            <Label htmlFor="subject-code">Subject Code</Label>
                             <Input
-                              type="hidden"
-                              value={semester}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBulkSubjectSemester(e.target.value)}
+                              id="subject-code"
+                              value={newSubject.code}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, code: e.target.value})}
+                              placeholder="e.g., 22CSC21"
+                              required
                             />
-                            <Button type="submit" className="w-full">Upload Subjects</Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button size="sm">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Subject
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md">
-                          <DialogHeader>
-                            <DialogTitle>Add Subject to Semester {semester}</DialogTitle>
-                          </DialogHeader>
-                          <form onSubmit={(e) => handleAddSubject(e, semester)} className="space-y-4">
-                            <div>
-                              <Label htmlFor="subject-code">Subject Code</Label>
-                              <Input
-                                id="subject-code"
-                                value={newSubject.code}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, code: e.target.value})}
-                                placeholder="e.g., 22CSC21"
-                                required
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="subject-name">Subject Name</Label>
-                              <Input
-                                id="subject-name"
-                                value={newSubject.name}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, name: e.target.value})}
-                                placeholder="e.g., Software Engineering"
-                                required
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="subject-abbreviation">Abbreviation</Label>
-                              <Input
-                                id="subject-abbreviation"
-                                value={newSubject.abbreviation}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, abbreviation: e.target.value})}
-                                placeholder="e.g., SE"
-                              />
-                            </div>
-                            <Button type="submit" className="w-full">Add Subject</Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
+                          </div>
+                          <div>
+                            <Label htmlFor="subject-name">Subject Name</Label>
+                            <Input
+                              id="subject-name"
+                              value={newSubject.name}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, name: e.target.value})}
+                              placeholder="e.g., Software Engineering"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="subject-abbreviation">Abbreviation</Label>
+                            <Input
+                              id="subject-abbreviation"
+                              value={newSubject.abbreviation}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, abbreviation: e.target.value})}
+                              placeholder="e.g., SE"
+                            />
+                          </div>
+                          <Button type="submit" className="w-full">Add Subject</Button>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                   <Table>
                     <TableHeader>
@@ -920,88 +1010,159 @@ const DepartmentPage = () => {
 
           {/* Students Tab */}
           <TabsContent value="students" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Student Sections</h2>
-              <Dialog>
+            {/* Batch Filter Dropdown */}
+            <div className="flex items-center space-x-4">
+              <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Batches" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Batches</SelectItem>
+                  {batches.map((batch) => (
+                    <SelectItem key={batch.name} value={batch.name}>
+                      {batch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Dialog open={showAddBatchDialog} onOpenChange={setShowAddBatchDialog}>
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Section
+                    Add Batch
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Add New Section</DialogTitle>
+                    <DialogTitle>Add New Batch</DialogTitle>
                     <DialogDescription>
-                      Create a new student section (e.g., IT1, IT2, CSE-A).
+                      Create a new student batch (e.g., 2023-27 for students joining in 2023 and graduating in 2027).
                     </DialogDescription>
                   </DialogHeader>
-                  <form onSubmit={handleAddClass} className="space-y-4">
+                  <form onSubmit={handleAddBatch} className="space-y-4">
                     <div>
-                      <Label htmlFor="class-section">Section Name</Label>
+                      <Label htmlFor="batch-start-year">Start Year</Label>
                       <Input
-                        id="class-section"
-                        value={newClass.section}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewClass({...newClass, section: e.target.value})}
-                        placeholder="e.g., IT1"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="class-year">Year</Label>
-                      <Input
-                        id="class-year"
+                        id="batch-start-year"
                         type="number"
-                        value={newClass.year}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewClass({...newClass, year: e.target.value})}
-                        placeholder="e.g., 3"
+                        value={newBatch.startYear}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewBatch({...newBatch, startYear: e.target.value})}
+                        placeholder="e.g., 2023"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="class-semester">Semester</Label>
+                      <Label htmlFor="batch-end-year">End Year</Label>
                       <Input
-                        id="class-semester"
+                        id="batch-end-year"
                         type="number"
-                        value={newClass.semester}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewClass({...newClass, semester: e.target.value})}
-                        placeholder="e.g., 6"
+                        value={newBatch.endYear}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewBatch({...newBatch, endYear: e.target.value})}
+                        placeholder="e.g., 2027"
                         required
                       />
                     </div>
-                    <Button type="submit" className="w-full">Add Section</Button>
+                    <Button type="submit" className="w-full">Create Batch</Button>
                   </form>
                 </DialogContent>
               </Dialog>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {department.classes?.map((classItem) => (
-                <Card
-                  key={classItem._id}
-                  className={`cursor-pointer transition-all hover:shadow-lg ${
-                    selectedClass?._id === classItem._id ? 'ring-2 ring-primary' : ''
-                  }`}
-                  onClick={() => setSelectedClass(classItem)}
-                >
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <GraduationCap className="w-5 h-5" />
-                      <span>{classItem.section}</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Year {classItem.year}, Semester {classItem.semester}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex justify-between text-sm">
-                      <span>Students:</span>
-                      <Badge variant="secondary" className="">{classItem.students?.length || 0}</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Student Sections</h2>
+              {selectedBatch !== "all" && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Section
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Add New Section</DialogTitle>
+                      <DialogDescription>
+                        Create a new student section (e.g., IT1, IT2, CSE-A).
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleAddClass} className="space-y-4">
+                      <div>
+                        <Label htmlFor="class-section">Section Name</Label>
+                        <Input
+                          id="class-section"
+                          value={newClass.section}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewClass({...newClass, section: e.target.value})}
+                          placeholder="e.g., IT1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="class-year">Year</Label>
+                        <Input
+                          id="class-year"
+                          type="number"
+                          value={newClass.year}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewClass({...newClass, year: e.target.value})}
+                          placeholder="e.g., 3"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="class-semester">Semester</Label>
+                        <Input
+                          id="class-semester"
+                          type="number"
+                          value={newClass.semester}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewClass({...newClass, semester: e.target.value})}
+                          placeholder="e.g., 6"
+                          required
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">Add Section</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
+
+            {selectedBatch === "all" ? (
+              <div className="text-center py-12">
+                <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Batch</h3>
+                <p className="text-gray-600">Choose a batch from the dropdown above to view and manage student sections.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {department.classes?.filter(classItem => {
+                  const batch = batches.find(b => b.name === selectedBatch);
+                  if (!batch) return false;
+                  return classItem.batchId === batch._id;
+                }).map((classItem) => (
+                  <Card
+                    key={classItem._id}
+                    className={`cursor-pointer transition-all hover:shadow-lg ${
+                      selectedClass?._id === classItem._id ? 'ring-2 ring-primary' : ''
+                    }`}
+                    onClick={() => setSelectedClass(classItem)}
+                  >
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <GraduationCap className="w-5 h-5" />
+                        <span>{classItem.section}</span>
+                      </CardTitle>
+                      <CardDescription>
+                        Year {classItem.year}, Semester {classItem.semester}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex justify-between text-sm">
+                        <span>Students:</span>
+                        <Badge variant="secondary" className="">{classItem.students?.length || 0}</Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
 
             {selectedClass && (
               <div className="mt-6">
