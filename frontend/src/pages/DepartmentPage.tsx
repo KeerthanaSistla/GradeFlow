@@ -62,7 +62,7 @@ const DepartmentPage = () => {
     abbreviation: "",
     credits: "",
     type: "theory",
-    semester: ""
+    semester: "1"
   });
   const [bulkSubjectSemester, setBulkSubjectSemester] = useState("");
   const [bulkSubjectFile, setBulkSubjectFile] = useState<File | null>(null);
@@ -121,7 +121,12 @@ const DepartmentPage = () => {
     if (!department) return;
 
     try {
-      await apiService.addSubjectToDepartment(department._id, newSubject);
+      await apiService.addSubjectToDepartment(department._id, {
+        subjectCode: newSubject.code,
+        name: newSubject.name,
+        abbreviation: newSubject.abbreviation,
+        semester: newSubject.semester
+      });
       toast({
         title: "Success",
         description: "Subject added successfully",
@@ -132,7 +137,7 @@ const DepartmentPage = () => {
         abbreviation: "",
         credits: "",
         type: "theory",
-        semester: ""
+        semester: "1"
       });
       loadDepartment();
     } catch (error: any) {
@@ -764,7 +769,7 @@ const DepartmentPage = () => {
                         value={newSubject.semester}
                         onValueChange={(value: string) => setNewSubject({...newSubject, semester: value})}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger id="subject-semester">
                           <SelectValue placeholder="Select semester" />
                         </SelectTrigger>
                         <SelectContent>
@@ -886,6 +891,7 @@ const DepartmentPage = () => {
                         <TableHead>Code</TableHead>
                         <TableHead>Subject Name</TableHead>
                         <TableHead>Abbreviation</TableHead>
+                        <TableHead>Semester</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -895,6 +901,7 @@ const DepartmentPage = () => {
                           <TableCell className="font-medium">{subject.code}</TableCell>
                           <TableCell>{subject.name}</TableCell>
                           <TableCell>{subject.abbreviation || '-'}</TableCell>
+                          <TableCell>{subject.semester}</TableCell>
                           <TableCell>
                             <Button
                               variant="outline"

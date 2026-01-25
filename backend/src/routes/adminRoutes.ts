@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { authMiddleware, requireRole, AuthRequest } from '../middleware/auth';
 import {
@@ -52,7 +52,7 @@ router.delete('/departments/:departmentId', authMiddleware, requireRole(['ADMIN'
 
 // Faculty management
 router.post('/departments/:departmentId/faculty', authMiddleware, requireRole(['ADMIN']), addFacultyToDepartment);
-router.post('/departments/:departmentId/faculty/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), (req, res) => bulkAddFacultyToDepartment(req as AuthRequest & { file?: Express.Multer.File }, res));
+router.post('/departments/:departmentId/faculty/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), bulkAddFacultyToDepartment);
 router.delete('/departments/:departmentId/faculty/:facultyId', authMiddleware, requireRole(['ADMIN']), deleteFacultyFromDepartment);
 router.put('/departments/:departmentId/faculty/:facultyId', authMiddleware, requireRole(['ADMIN']), updateFacultyDetails);
 
@@ -62,7 +62,7 @@ router.delete('/departments/:departmentId/classes/:classId', authMiddleware, req
 
 // Subject management
 router.post('/departments/:departmentId/subjects', authMiddleware, requireRole(['ADMIN']), addSubjectToDepartment);
-router.post('/departments/:departmentId/subjects/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), (req, res) => bulkAddSubjectsToDepartment(req as AuthRequest & { file?: Express.Multer.File }, res));
+router.post('/departments/:departmentId/subjects/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), bulkAddSubjectsToDepartment);
 router.delete('/departments/:departmentId/subjects/:subjectId', authMiddleware, requireRole(['ADMIN']), deleteSubjectFromDepartment);
 
 export default router;

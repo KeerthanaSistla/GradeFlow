@@ -73,7 +73,14 @@ export async function getDepartmentById(req: AuthRequest, res: Response) {
 
     // Fetch related data
     const faculty = await Faculty.find({ departmentId }).select('-createdAt -updatedAt');
-    const subjects = await (await import('../models/Subject')).default.find({ departmentId }).select('-createdAt -updatedAt');
+    const rawSubjects = await (await import('../models/Subject')).default.find({ departmentId }).select('-createdAt -updatedAt');
+    const subjects = rawSubjects.map(s => ({
+      _id: s._id,
+      code: s.subjectCode,
+      name: s.name,
+      abbreviation: s.abbreviation,
+      semester: s.semester
+    }));
     const classes = await Section.find({ departmentId }).select('-createdAt -updatedAt');
 
     // Populate the department object with relations
@@ -345,9 +352,9 @@ export async function deleteClassFromDepartment(req: AuthRequest, res: Response)
 export async function addSubjectToDepartment(req: AuthRequest, res: Response) {
   try {
     const { departmentId } = req.params;
-    const { code, name, abbreviation, semester } = req.body;
+    const { subjectCode, name, abbreviation, semester } = req.body;
 
-    if (!code || !name || !semester) {
+    if (!subjectCode || !name || !semester) {
       return res.status(400).json({ error: 'Subject code, name, and semester required' });
     }
 
@@ -362,7 +369,7 @@ export async function addSubjectToDepartment(req: AuthRequest, res: Response) {
 
     // Check if subject code already exists in department
     const existingSubject = await Subject.findOne({
-      subjectCode: code,
+      subjectCode: subjectCode,
       departmentId
     });
 
@@ -372,7 +379,7 @@ export async function addSubjectToDepartment(req: AuthRequest, res: Response) {
 
     // Create subject
     const subject = new Subject({
-      subjectCode: code,
+      subjectCode: subjectCode,
       name,
       abbreviation,
       semester: parseInt(semester),
@@ -447,7 +454,7 @@ export async function bulkAddSubjectsToDepartment(req: AuthRequest, res: Respons
 
     // Parse Excel file
     const XLSX = require('xlsx');
-    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(worksheet);
@@ -459,28 +466,33 @@ export async function bulkAddSubjectsToDepartment(req: AuthRequest, res: Respons
       const row = data[i] as any;
 
       try {
+        // Extract data with flexible column names
+        const subjectCode = row['Subject Code'] || row['subject code'] || row['SubjectCode'] || row['subjectCode'] || row['Code'] || row['code'];
+        const subjectName = row['Subject Name'] || row['subject name'] || row['SubjectName'] || row['subjectName'] || row['Name'] || row['name'];
+        const abbreviation = row['Abbreviation'] || row['abbreviation'] || row['Abbr'] || row['abbr'] || '';
+
         // Validate required fields
-        if (!row['Subject Code'] || !row['Subject Name']) {
+        if (!subjectCode || !subjectName) {
           errors.push(`Row ${i + 2}: Missing required fields (Subject Code, Subject Name)`);
           continue;
         }
 
         // Check if subject already exists
         const existingSubject = await Subject.findOne({
-          subjectCode: row['Subject Code'],
+          subjectCode: subjectCode,
           departmentId
         });
 
         if (existingSubject) {
-          errors.push(`Row ${i + 2}: Subject with code ${row['Subject Code']} already exists`);
+          errors.push(`Row ${i + 2}: Subject with code ${subjectCode} already exists`);
           continue;
         }
 
         // Create subject
         const subject = new Subject({
-          subjectCode: row['Subject Code'],
-          name: row['Subject Name'],
-          abbreviation: row['Abbreviation'] || '',
+          subjectCode: subjectCode,
+          name: subjectName,
+          abbreviation: abbreviation,
           semester: parseInt(semester),
           departmentId
         });
@@ -529,7 +541,7 @@ export async function bulkAddFacultyToDepartment(req: AuthRequest, res: Response
 
     // Parse Excel file
     const XLSX = require('xlsx');
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(worksheet);
