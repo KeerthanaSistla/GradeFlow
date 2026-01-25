@@ -11,9 +11,7 @@ const SectionSchema = new Schema<ISection>(
   {
     name: { type: String, required: true },
     departmentId: { type: Schema.Types.ObjectId, ref: 'Department', required: true },
-    batchId: { type: Schema.Types.ObjectId, ref: 'Batch', required: true },
-    year: { type: Number, required: true },
-    semester: { type: Number, required: true }
+    batchId: { type: Schema.Types.ObjectId, ref: 'Batch', required: true }
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

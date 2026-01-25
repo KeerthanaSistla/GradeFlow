@@ -294,10 +294,10 @@ export async function addFacultyToDepartment(req: AuthRequest, res: Response) {
 export async function addClassToDepartment(req: AuthRequest, res: Response) {
   try {
     const { departmentId } = req.params;
-    const { section, year, semester, batchId } = req.body;
+    const { section, batchId } = req.body;
 
-    if (!section || !year || semester === undefined || !batchId) {
-      return res.status(400).json({ error: 'Section, year, semester, and batchId required' });
+    if (!section || !batchId) {
+      return res.status(400).json({ error: 'Section and batchId required' });
     }
 
     // Check if department exists
@@ -316,9 +316,7 @@ export async function addClassToDepartment(req: AuthRequest, res: Response) {
     const sectionObj = new Section({
       name: section,
       departmentId,
-      batchId,
-      year: parseInt(year),
-      semester: parseInt(semester)
+      batchId
     });
 
     await sectionObj.save();

@@ -33,8 +33,6 @@ interface Subject {
 interface Class {
   _id: string;
   section: string;
-  year: number;
-  semester: number;
   students?: Student[];
 }
 
@@ -90,9 +88,7 @@ const DepartmentPage = () => {
     role: "Professor"
   });
   const [newClass, setNewClass] = useState({
-    section: "",
-    year: "",
-    semester: ""
+    section: ""
   });
   const [newStudent, setNewStudent] = useState({
     name: "",
@@ -224,9 +220,7 @@ const DepartmentPage = () => {
         description: "Class added successfully",
       });
       setNewClass({
-        section: "",
-        year: "",
-        semester: ""
+        section: ""
       });
       loadDepartment();
     } catch (error: any) {
@@ -1092,28 +1086,6 @@ const DepartmentPage = () => {
                           value={newClass.section}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewClass({...newClass, section: e.target.value})}
                           placeholder="e.g., IT1"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="class-year">Year</Label>
-                        <Input
-                          id="class-year"
-                          type="number"
-                          value={newClass.year}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewClass({...newClass, year: e.target.value})}
-                          placeholder="e.g., 3"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="class-semester">Semester</Label>
-                        <Input
-                          id="class-semester"
-                          type="number"
-                          value={newClass.semester}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewClass({...newClass, semester: e.target.value})}
-                          placeholder="e.g., 6"
                           required
                         />
                       </div>
