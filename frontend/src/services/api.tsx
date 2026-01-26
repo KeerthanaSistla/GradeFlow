@@ -334,6 +334,13 @@ class ApiService {
     });
   }
 
+  async updateSubject(departmentId: string, subjectId: string, subjectData: Record<string, unknown>): Promise<ApiResponse> {
+    return this.request(`/admin/departments/${departmentId}/subjects/${subjectId}`, {
+      method: 'PUT',
+      body: subjectData,
+    });
+  }
+
   async deleteClass(departmentId: string, classId: string): Promise<ApiResponse> {
     return this.request(`/admin/departments/${departmentId}/classes/${classId}`, {
       method: 'DELETE',

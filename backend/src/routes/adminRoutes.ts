@@ -1,6 +1,9 @@
 import { Router, Request, Response, RequestHandler } from 'express';
 import multer from 'multer';
 import { authMiddleware, requireRole, AuthRequest } from '../middleware/auth';
+
+// Combined middleware for admin routes
+const adminMiddleware = [authMiddleware, requireRole(['ADMIN'])];
 import {
   adminLogin,
   getDepartments,
@@ -14,6 +17,7 @@ import {
   addClassToDepartment,
   deleteClassFromDepartment,
   addSubjectToDepartment,
+  updateSubjectDetails,
   deleteSubjectFromDepartment,
   bulkAddSubjectsToDepartment,
   bulkAddFacultyToDepartment,
@@ -49,34 +53,55 @@ const upload = multer({
 router.post('/login', adminLogin);
 
 // Protected (Admin only)
-router.get('/departments', authMiddleware, requireRole(['ADMIN']), getDepartments as RequestHandler);
-router.get('/departments/:departmentId', authMiddleware, requireRole(['ADMIN']), getDepartmentById as RequestHandler);
-router.post('/departments', authMiddleware, requireRole(['ADMIN']), createDepartment as RequestHandler);
-router.put('/departments/:departmentId', authMiddleware, requireRole(['ADMIN']), updateDepartment as RequestHandler);
-router.delete('/departments/:departmentId', authMiddleware, requireRole(['ADMIN']), deleteDepartment as RequestHandler);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.get('/departments', ...adminMiddleware, getDepartments);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.get('/departments/:departmentId', ...adminMiddleware, getDepartmentById);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.post('/departments', ...adminMiddleware, createDepartment);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.put('/departments/:departmentId', ...adminMiddleware, updateDepartment);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.delete('/departments/:departmentId', ...adminMiddleware, deleteDepartment);
 
 // Faculty management
-router.post('/departments/:departmentId/faculty', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => addFacultyToDepartment(req, res));
-router.post('/departments/:departmentId/faculty/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), (req: any, res: Response) => bulkAddFacultyToDepartment(req, res));
-router.delete('/departments/:departmentId/faculty/:facultyId', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => deleteFacultyFromDepartment(req, res));
-router.put('/departments/:departmentId/faculty/:facultyId', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => updateFacultyDetails(req, res));
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.post('/departments/:departmentId/faculty', ...adminMiddleware, addFacultyToDepartment);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.post('/departments/:departmentId/faculty/bulk', ...adminMiddleware, upload.single('excelFile'), bulkAddFacultyToDepartment);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.delete('/departments/:departmentId/faculty/:facultyId', ...adminMiddleware, deleteFacultyFromDepartment);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.put('/departments/:departmentId/faculty/:facultyId', ...adminMiddleware, updateFacultyDetails);
 
 // Class management
-router.post('/departments/:departmentId/classes', authMiddleware, requireRole(['ADMIN']), addClassToDepartment);
-router.delete('/departments/:departmentId/classes/:classId', authMiddleware, requireRole(['ADMIN']), deleteClassFromDepartment);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.post('/departments/:departmentId/classes', ...adminMiddleware, addClassToDepartment);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.delete('/departments/:departmentId/classes/:classId', ...adminMiddleware, deleteClassFromDepartment);
 
 // Subject management
-router.post('/departments/:departmentId/subjects', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => addSubjectToDepartment(req, res));
-router.post('/departments/:departmentId/subjects/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), (req: any, res: Response) => bulkAddSubjectsToDepartment(req, res));
-router.delete('/departments/:departmentId/subjects/:subjectId', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => deleteSubjectFromDepartment(req, res));
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.post('/departments/:departmentId/subjects', ...adminMiddleware, addSubjectToDepartment);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.put('/departments/:departmentId/subjects/:subjectId', ...adminMiddleware, updateSubjectDetails);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.post('/departments/:departmentId/subjects/bulk', ...adminMiddleware, upload.single('excelFile'), bulkAddSubjectsToDepartment);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.delete('/departments/:departmentId/subjects/:subjectId', ...adminMiddleware, deleteSubjectFromDepartment);
 
 // Batch management
-router.post('/departments/:departmentId/batches', authMiddleware, requireRole(['ADMIN']), createBatchForDepartment);
-router.get('/departments/:departmentId/batches', authMiddleware, requireRole(['ADMIN']), getBatchesForDepartment);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.post('/departments/:departmentId/batches', ...adminMiddleware, createBatchForDepartment);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.get('/departments/:departmentId/batches', ...adminMiddleware, getBatchesForDepartment);
 
 // Student management
-router.post('/departments/:departmentId/classes/:classId/create-student', authMiddleware, requireRole(['ADMIN']), createStudentAndAddToClass);
-router.post('/departments/:departmentId/classes/:classId/students/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), bulkAddStudentsToClass);
-router.delete('/departments/:departmentId/classes/:classId/students/:studentId', authMiddleware, requireRole(['ADMIN']), deleteStudentFromClass);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.post('/departments/:departmentId/classes/:classId/create-student', ...adminMiddleware, createStudentAndAddToClass);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.post('/departments/:departmentId/classes/:classId/students/bulk', ...adminMiddleware, upload.single('excelFile'), bulkAddStudentsToClass);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.delete('/departments/:departmentId/classes/:classId/students/:studentId', ...adminMiddleware, deleteStudentFromClass);
 
 export default router;

@@ -111,6 +111,14 @@ const DepartmentPage = () => {
     designation: ""
   });
   const [showEditFacultyDialog, setShowEditFacultyDialog] = useState(false);
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [editSubjectData, setEditSubjectData] = useState({
+    subjectCode: "",
+    name: "",
+    abbreviation: "",
+    semester: ""
+  });
+  const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
 
   useEffect(() => {
     loadDepartment();
@@ -422,6 +430,17 @@ const DepartmentPage = () => {
     setShowEditFacultyDialog(true);
   };
 
+  const handleEditSubject = (subject: Subject) => {
+    setEditingSubject(subject);
+    setEditSubjectData({
+      subjectCode: subject.code,
+      name: subject.name,
+      abbreviation: subject.abbreviation || "",
+      semester: subject.semester
+    });
+    setShowEditSubjectDialog(true);
+  };
+
   const handleUpdateFaculty = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!department || !editingFaculty) return;
@@ -439,6 +458,28 @@ const DepartmentPage = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to update faculty",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateSubject = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!department || !editingSubject) return;
+
+    try {
+      await apiService.updateSubject(department._id, editingSubject._id, editSubjectData);
+      toast({
+        title: "Success",
+        description: "Subject updated successfully",
+      });
+      setShowEditSubjectDialog(false);
+      setEditingSubject(null);
+      loadDepartment();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update subject",
         variant: "destructive",
       });
     }
@@ -1076,14 +1117,23 @@ const DepartmentPage = () => {
                           <TableCell className="text-left">{subject.abbreviation || '-'}</TableCell>
                           <TableCell className="text-left">{subject.semester}</TableCell>
                           <TableCell className="text-left">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteSubject(subject._id)}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditSubject(subject)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteSubject(subject._id)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1092,6 +1142,66 @@ const DepartmentPage = () => {
                 </div>
               ))
             )}
+            <Dialog open={showEditSubjectDialog} onOpenChange={setShowEditSubjectDialog}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Edit Subject</DialogTitle>
+                  <DialogDescription>
+                    Update the subject details.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleUpdateSubject} className="space-y-4">
+                  <div>
+                    <Label htmlFor="edit-subject-code">Subject Code</Label>
+                    <Input
+                      id="edit-subject-code"
+                      value={editSubjectData.subjectCode}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditSubjectData({...editSubjectData, subjectCode: e.target.value})}
+                      placeholder="e.g., 22CSC21"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-subject-name">Subject Name</Label>
+                    <Input
+                      id="edit-subject-name"
+                      value={editSubjectData.name}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditSubjectData({...editSubjectData, name: e.target.value})}
+                      placeholder="e.g., Software Engineering"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-subject-abbreviation">Abbreviation</Label>
+                    <Input
+                      id="edit-subject-abbreviation"
+                      value={editSubjectData.abbreviation}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditSubjectData({...editSubjectData, abbreviation: e.target.value})}
+                      placeholder="e.g., SE"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-subject-semester">Semester</Label>
+                    <Select
+                      value={editSubjectData.semester}
+                      onValueChange={(value: string) => setEditSubjectData({...editSubjectData, semester: value})}
+                    >
+                      <SelectTrigger id="edit-subject-semester">
+                        <SelectValue placeholder="Select semester" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 8 }, (_, i) => i + 1).map((sem) => (
+                          <SelectItem key={sem} value={sem.toString()}>
+                            Semester {sem}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button type="submit" className="w-full">Update Subject</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Students Tab */}

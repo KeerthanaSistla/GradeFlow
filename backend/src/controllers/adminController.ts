@@ -561,6 +561,57 @@ export async function addSubjectToDepartment(req: AuthRequest, res: Response) {
 }
 
 /**
+ * Update subject details
+ */
+export async function updateSubjectDetails(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId, subjectId } = req.params;
+    const { subjectCode, name, abbreviation, semester } = req.body;
+
+    // Import Subject model
+    const Subject = (await import('../models/Subject')).default;
+
+    // Check if subject exists
+    const subject = await Subject.findOne({
+      _id: subjectId,
+      departmentId
+    });
+
+    if (!subject) {
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+
+    // Check if new subject code conflicts with existing subjects (if changed)
+    if (subjectCode && subjectCode !== subject.subjectCode) {
+      const existingSubject = await Subject.findOne({
+        subjectCode: subjectCode,
+        departmentId,
+        _id: { $ne: subjectId }
+      });
+
+      if (existingSubject) {
+        return res.status(400).json({ error: 'Subject code already exists in this department' });
+      }
+    }
+
+    // Update subject
+    if (subjectCode) subject.subjectCode = subjectCode;
+    if (name) subject.name = name;
+    if (abbreviation !== undefined) subject.abbreviation = abbreviation;
+    if (semester) subject.semester = parseInt(semester);
+
+    await subject.save();
+
+    res.json({
+      message: 'Subject updated successfully',
+      subject
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
  * Delete subject from department
  */
 export async function deleteSubjectFromDepartment(req: AuthRequest, res: Response) {
