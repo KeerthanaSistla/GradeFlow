@@ -33,6 +33,9 @@ interface Subject {
 interface Class {
   _id: string;
   section: string;
+  year: number;
+  semester: number;
+  batchId: string;
   students?: Student[];
 }
 
@@ -211,7 +214,7 @@ const DepartmentPage = () => {
     }
 
     try {
-      await apiService.addClassToDepartment(department._id, {
+      const result = await apiService.addClassToDepartment(department._id, {
         ...newClass,
         batchId: batch._id
       });
@@ -219,9 +222,23 @@ const DepartmentPage = () => {
         title: "Success",
         description: "Class added successfully",
       });
+
+      // Optimistically update the local state for immediate UI update
+      if (result.class) {
+        setDepartment(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            classes: [...(prev.classes || []), result.class as Class]
+          };
+        });
+      }
+
       setNewClass({
         section: ""
       });
+
+      // Refresh data from server to ensure consistency
       loadDepartment();
     } catch (error: any) {
       toast({
@@ -456,7 +473,9 @@ const DepartmentPage = () => {
   const loadBatches = async () => {
     try {
       const response = await apiService.request(`/admin/departments/${departmentId}/batches`);
-      setBatches(response);
+      // Handle API response that might be wrapped in data property
+      const batchesData = (response as any).data || response;
+      setBatches(batchesData as Batch[]);
     } catch (error: any) {
       console.error('Load batches error:', error);
       toast({
@@ -1107,14 +1126,20 @@ const DepartmentPage = () => {
                 {department.classes?.filter(classItem => {
                   const batch = batches.find(b => b.name === selectedBatch);
                   if (!batch) return false;
-                  return classItem.batchId === batch._id;
+                  return classItem.batchId === batch._id || classItem.batchId === batch._id.toString();
                 }).map((classItem) => (
                   <Card
                     key={classItem._id}
                     className={`cursor-pointer transition-all hover:shadow-lg ${
                       selectedClass?._id === classItem._id ? 'ring-2 ring-primary' : ''
                     }`}
-                    onClick={() => setSelectedClass(classItem)}
+                    onClick={() => {
+                      // Ensure we include the batchId when setting selectedClass
+                      setSelectedClass({
+                        ...classItem,
+                        batchId: classItem.batchId || '' // Add fallback if batchId is missing
+                      });
+                    }}
                   >
                     <CardHeader>
                       <CardTitle className="flex items-center space-x-2">
@@ -1238,7 +1263,7 @@ const DepartmentPage = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedClass.students?.sort((a, b) => a.rollNo.localeCompare(b.rollNo)).map((student) => (
+                    {selectedClass.students?.sort((a, b) => (a.rollNo || '').localeCompare(b.rollNo || '')).map((student) => (
                       <TableRow key={student._id}>
                         <TableCell className="font-medium">{student.rollNo}</TableCell>
                         <TableCell>{student.name}</TableCell>

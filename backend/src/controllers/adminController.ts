@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import mongoose from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import Admin from '../models/Admin';
 import UserAuth from '../models/UserAuth';
@@ -7,7 +8,11 @@ import Faculty from '../models/Faculty';
 import Section from '../models/Section';
 import Batch from '../models/Batch';
 import AcademicYear from '../models/AcademicYear';
+import Student from '../models/Student';
 import { hashPassword, verifyPassword, generateToken } from '../utils/auth';
+import { calculateAcademicInfo } from '../utils/academicCalculator';
+import csv from 'csv-parser';
+import { Readable } from 'stream';
 
 /**
  * Admin login
@@ -153,7 +158,41 @@ export async function getDepartmentById(req: AuthRequest, res: Response) {
       abbreviation: s.abbreviation,
       semester: s.semester
     }));
-    const classes = await Section.find({ departmentId }).select('-createdAt -updatedAt');
+    const rawClasses = await Section.find({ departmentId }).populate('students').populate('batchId').select('-createdAt -updatedAt');
+
+    // Transform student data to match frontend interface and calculate year/semester
+    const classes: any[] = rawClasses.map(classItem => {
+      const batch = classItem.batchId as any;
+
+      // Use stored year/semester if available, otherwise calculate
+      let year = classItem.year || 1;
+      let semester = classItem.semester || 1;
+
+      if (batch && batch.startYear && batch.endYear && (!classItem.year || !classItem.semester)) {
+        try {
+          const academicInfo = calculateAcademicInfo(batch.startYear, batch.endYear);
+          year = academicInfo.year;
+          semester = academicInfo.semester;
+        } catch (error) {
+          console.error('Error calculating academic info:', error);
+          // Keep default values
+        }
+      }
+
+      return {
+        ...classItem.toObject(),
+        batchId: batch._id.toString(),
+        year,
+        semester,
+        students: classItem.students?.map((student: any) => ({
+          _id: student._id,
+          rollNo: student.rollNumber,
+          name: student.name,
+          email: student.email,
+          mobile: student.mobile
+        })) || []
+      };
+    });
 
     // Populate the department object with relations
     const deptWithRelations = {
@@ -312,21 +351,67 @@ export async function addClassToDepartment(req: AuthRequest, res: Response) {
       return res.status(404).json({ error: 'Batch not found' });
     }
 
+    // Verify batch belongs to the department
+    if (batch.departmentId.toString() !== departmentId) {
+      return res.status(400).json({ error: 'Batch does not belong to this department' });
+    }
+
+    // Check if section already exists for this department and batch
+    const existingSection = await Section.findOne({
+      name: section,
+      departmentId,
+      batchId
+    });
+
+    if (existingSection) {
+      return res.status(400).json({ error: `Section '${section}' already exists for this batch` });
+    }
+
+    // Calculate current year and semester based on batch
+    const academicInfo = calculateAcademicInfo(batch.startYear, batch.endYear);
+
     // Create section/class
     const sectionObj = new Section({
       name: section,
       departmentId,
-      batchId
+      batchId,
+      year: academicInfo.year,
+      semester: academicInfo.semester
     });
 
     await sectionObj.save();
 
     res.status(201).json({
       message: 'Class added successfully',
-      class: sectionObj
+      class: {
+        _id: sectionObj._id,
+        section: sectionObj.name,
+        batchId: sectionObj.batchId,
+        year: sectionObj.year,
+        semester: sectionObj.semester,
+        students: []
+      }
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in addClassToDepartment:', error);
+
+    // Check for duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({ error: 'Section already exists for this batch' });
+    }
+
+    // Check for validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map((err: any) => err.message);
+      return res.status(400).json({ error: errors.join(', ') });
+    }
+
+    // Check for cast errors (invalid ObjectId)
+    if (error.name === 'CastError') {
+      return res.status(400).json({ error: 'Invalid ID format' });
+    }
+
+    res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -531,7 +616,7 @@ export async function bulkAddSubjectsToDepartment(req: AuthRequest, res: Respons
 
     // Parse Excel file
     const XLSX = require('xlsx');
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(worksheet);
@@ -687,6 +772,223 @@ export async function bulkAddFacultyToDepartment(req: AuthRequest, res: Response
       errors: errors.length > 0 ? errors : undefined
     });
 
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Create a student and add to class
+ */
+export async function createStudentAndAddToClass(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId, classId } = req.params;
+    const { rollNo, name, email, mobile } = req.body;
+
+    if (!rollNo || !name) {
+      return res.status(400).json({ error: 'Roll number and name required' });
+    }
+
+    // Check if department exists
+    const dept = await Department.findById(departmentId);
+    if (!dept) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    // Check if class/section exists
+    const section = await Section.findById(classId);
+    if (!section) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    // Check if student with roll number already exists
+    const existingStudent = await Student.findOne({ rollNumber: rollNo });
+    if (existingStudent) {
+      return res.status(400).json({ error: 'Student with this roll number already exists' });
+    }
+
+    // Create student
+    const student = new Student({
+      rollNumber: rollNo,
+      name,
+      email,
+      mobile,
+      departmentId
+    });
+
+    await student.save();
+
+    // Add student to section
+    section.students.push(student._id);
+    await section.save();
+
+    // Create auth record for student
+    const userAuth = new UserAuth({
+      role: 'STUDENT',
+      referenceId: student._id,
+      passwordHash: await hashPassword('password123') // Default password
+    });
+
+    await userAuth.save();
+
+    res.status(201).json({
+      message: 'Student created and added to class successfully',
+      student: {
+        _id: student._id,
+        rollNo: student.rollNumber,
+        name: student.name,
+        email: student.email,
+        mobile: student.mobile
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Bulk add students to class from Excel file
+ */
+export async function bulkAddStudentsToClass(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId, classId } = req.params;
+    const file = (req as any).file;
+
+    if (!file) {
+      return res.status(400).json({ error: 'Excel file required' });
+    }
+
+    // Check if department exists
+    const dept = await Department.findById(departmentId);
+    if (!dept) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    // Check if class/section exists
+    const section = await Section.findById(classId);
+    if (!section) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    // Parse Excel file
+    const XLSX = require('xlsx');
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+
+    const studentsAdded = [];
+    const errors = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i] as any;
+
+      try {
+        // Extract data with flexible column names
+        const rollNo = row['Roll Number'] || row['roll number'] || row['RollNumber'] || row['rollNumber'] || row['Roll No'] || row['rollNo'];
+        const studentName = row['Name'] || row['name'];
+        const email = row['Email'] || row['email'];
+        const mobile = row['Mobile'] || row['mobile'] || row['Phone'] || row['phone'];
+
+        // Validate required fields
+        if (!rollNo || !studentName) {
+          errors.push(`Row ${i + 2}: Missing required fields (Roll Number, Name)`);
+          continue;
+        }
+
+        // Check if student already exists
+        const existingStudent = await Student.findOne({ rollNumber: rollNo });
+        if (existingStudent) {
+          errors.push(`Row ${i + 2}: Student with roll number ${rollNo} already exists`);
+          continue;
+        }
+
+        // Create student
+        const student = new Student({
+          rollNumber: rollNo,
+          name: studentName,
+          email: email || undefined,
+          mobile: mobile || undefined,
+          departmentId
+        });
+
+        await student.save();
+
+        // Add student to section
+        section.students.push(student._id);
+
+        // Create auth record for student
+        const userAuth = new UserAuth({
+          role: 'STUDENT',
+          referenceId: student._id,
+          passwordHash: await hashPassword('password123') // Default password
+        });
+
+        await userAuth.save();
+
+        studentsAdded.push({
+          rollNo: student.rollNumber,
+          name: student.name,
+          email: student.email,
+          mobile: student.mobile
+        });
+
+      } catch (error: any) {
+        errors.push(`Row ${i + 2}: ${error.message}`);
+      }
+    }
+
+    // Save the section with new students
+    await section.save();
+
+    res.status(201).json({
+      message: `Successfully added ${studentsAdded.length} students`,
+      added: studentsAdded,
+      errors: errors.length > 0 ? errors : undefined
+    });
+
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Delete student from class
+ */
+export async function deleteStudentFromClass(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId, classId, studentId } = req.params;
+
+    // Check if student exists
+    const student = await Student.findOne({
+      _id: studentId,
+      departmentId
+    });
+
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    // Check if class/section exists
+    const section = await Section.findById(classId);
+    if (!section) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    // Remove student from section
+    section.students = section.students.filter(id => id.toString() !== studentId);
+    await section.save();
+
+    // Delete student
+    await Student.findByIdAndDelete(studentId);
+
+    // Delete associated auth record
+    await UserAuth.deleteOne({
+      role: 'STUDENT',
+      referenceId: studentId
+    });
+
+    res.json({ message: 'Student deleted successfully' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

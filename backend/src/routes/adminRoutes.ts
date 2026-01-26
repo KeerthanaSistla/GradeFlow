@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, RequestHandler } from 'express';
 import multer from 'multer';
 import { authMiddleware, requireRole, AuthRequest } from '../middleware/auth';
 import {
@@ -18,7 +18,10 @@ import {
   bulkAddSubjectsToDepartment,
   bulkAddFacultyToDepartment,
   createBatchForDepartment,
-  getBatchesForDepartment
+  getBatchesForDepartment,
+  createStudentAndAddToClass,
+  bulkAddStudentsToClass,
+  deleteStudentFromClass
 } from '../controllers/adminController';
 
 const router = Router();
@@ -46,29 +49,34 @@ const upload = multer({
 router.post('/login', adminLogin);
 
 // Protected (Admin only)
-router.get('/departments', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => getDepartments(req, res));
-router.get('/departments/:departmentId', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => getDepartmentById(req, res));
-router.post('/departments', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => createDepartment(req, res));
-router.put('/departments/:departmentId', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => updateDepartment(req, res));
-router.delete('/departments/:departmentId', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => deleteDepartment(req, res));
+router.get('/departments', authMiddleware, requireRole(['ADMIN']), getDepartments as RequestHandler);
+router.get('/departments/:departmentId', authMiddleware, requireRole(['ADMIN']), getDepartmentById as RequestHandler);
+router.post('/departments', authMiddleware, requireRole(['ADMIN']), createDepartment as RequestHandler);
+router.put('/departments/:departmentId', authMiddleware, requireRole(['ADMIN']), updateDepartment as RequestHandler);
+router.delete('/departments/:departmentId', authMiddleware, requireRole(['ADMIN']), deleteDepartment as RequestHandler);
 
 // Faculty management
 router.post('/departments/:departmentId/faculty', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => addFacultyToDepartment(req, res));
-router.post('/departments/:departmentId/faculty/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), (req: AuthRequest, res: Response) => bulkAddFacultyToDepartment(req, res));
+router.post('/departments/:departmentId/faculty/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), (req: any, res: Response) => bulkAddFacultyToDepartment(req, res));
 router.delete('/departments/:departmentId/faculty/:facultyId', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => deleteFacultyFromDepartment(req, res));
 router.put('/departments/:departmentId/faculty/:facultyId', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => updateFacultyDetails(req, res));
 
 // Class management
-router.post('/departments/:departmentId/classes', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => addClassToDepartment(req, res));
-router.delete('/departments/:departmentId/classes/:classId', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => deleteClassFromDepartment(req, res));
+router.post('/departments/:departmentId/classes', authMiddleware, requireRole(['ADMIN']), addClassToDepartment);
+router.delete('/departments/:departmentId/classes/:classId', authMiddleware, requireRole(['ADMIN']), deleteClassFromDepartment);
 
 // Subject management
 router.post('/departments/:departmentId/subjects', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => addSubjectToDepartment(req, res));
-router.post('/departments/:departmentId/subjects/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), (req: AuthRequest, res: Response) => bulkAddSubjectsToDepartment(req, res));
+router.post('/departments/:departmentId/subjects/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), (req: any, res: Response) => bulkAddSubjectsToDepartment(req, res));
 router.delete('/departments/:departmentId/subjects/:subjectId', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => deleteSubjectFromDepartment(req, res));
 
 // Batch management
-router.post('/departments/:departmentId/batches', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => createBatchForDepartment(req, res));
-router.get('/departments/:departmentId/batches', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => getBatchesForDepartment(req, res));
+router.post('/departments/:departmentId/batches', authMiddleware, requireRole(['ADMIN']), createBatchForDepartment);
+router.get('/departments/:departmentId/batches', authMiddleware, requireRole(['ADMIN']), getBatchesForDepartment);
+
+// Student management
+router.post('/departments/:departmentId/classes/:classId/create-student', authMiddleware, requireRole(['ADMIN']), createStudentAndAddToClass);
+router.post('/departments/:departmentId/classes/:classId/students/bulk', authMiddleware, requireRole(['ADMIN']), upload.single('excelFile'), bulkAddStudentsToClass);
+router.delete('/departments/:departmentId/classes/:classId/students/:studentId', authMiddleware, requireRole(['ADMIN']), deleteStudentFromClass);
 
 export default router;

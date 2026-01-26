@@ -35,6 +35,7 @@ export interface Department {
     section: string;
     year: number;
     semester: number;
+    batchId: string;
     students?: Array<{
       _id: string;
       rollNo: string;
@@ -250,10 +251,16 @@ class ApiService {
   }
 
   async addClassToDepartment(departmentId: string, classData: Record<string, unknown>): Promise<ApiResponse> {
-    return this.request(`/admin/departments/${departmentId}/classes`, {
-      method: 'POST',
-      body: classData,
-    });
+    try {
+      const response = await this.request(`/admin/departments/${departmentId}/classes`, {
+        method: 'POST',
+        body: classData,
+      });
+      return response;
+    } catch (error: any) {
+      console.error('Add class error:', error);
+      throw new Error(error.message || 'Failed to add class');
+    }
   }
 
   async createStudentAndAddToClass(departmentId: string, classId: string, studentData: Record<string, unknown>): Promise<ApiResponse> {
