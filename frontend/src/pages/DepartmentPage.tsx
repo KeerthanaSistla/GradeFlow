@@ -1147,7 +1147,7 @@ const DepartmentPage = () => {
                         <span>{classItem.section}</span>
                       </CardTitle>
                       <CardDescription>
-                        Year {classItem.year}, Semester {classItem.semester}
+                        {classItem.section} - Year {classItem.year}, Semester {classItem.semester}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>

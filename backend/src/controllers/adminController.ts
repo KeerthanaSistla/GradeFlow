@@ -180,7 +180,8 @@ export async function getDepartmentById(req: AuthRequest, res: Response) {
       }
 
       return {
-        ...classItem.toObject(),
+        _id: classItem._id,
+        section: classItem.name,
         batchId: batch._id.toString(),
         year,
         semester,
