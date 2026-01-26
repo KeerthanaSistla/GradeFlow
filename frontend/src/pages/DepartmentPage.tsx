@@ -258,17 +258,44 @@ const DepartmentPage = () => {
     if (!department || !selectedClass) return;
 
     try {
-      await apiService.createStudentAndAddToClass(department._id, selectedClass._id, newStudent);
+      const result = await apiService.createStudentAndAddToClass(department._id, selectedClass._id, newStudent);
       toast({
         title: "Success",
         description: "Student created and added to class successfully",
       });
+
+      // Optimistically update the selectedClass state to include the new student
+      if (result.student) {
+        setSelectedClass(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            students: [...(prev.students || []), result.student as Student]
+          };
+        });
+
+        // Also update the department state to reflect the change
+        setDepartment(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            classes: prev.classes?.map(cls =>
+              cls._id === selectedClass._id
+                ? { ...cls, students: [...(cls.students || []), result.student as Student] }
+                : cls
+            )
+          };
+        });
+      }
+
       setNewStudent({
         name: "",
         rollNo: "",
         email: "",
         mobile: ""
       });
+
+      // Refresh data from server to ensure consistency
       loadDepartment();
     } catch (error: any) {
       toast({
