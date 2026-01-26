@@ -1478,7 +1478,7 @@ const DepartmentPage = () => {
                   <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground" />
                 </div>
               </TableHead>
-              <TableHead className="text-right w-[100px]">Actions</TableHead>
+              <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1488,15 +1488,15 @@ const DepartmentPage = () => {
                 .map((student) => (
                   <TableRow key={student._id} className="hover:bg-muted/50 group">
                     <TableCell>
-                      <div className="font-mono text-sm bg-muted/20 px-3 py-1.5 rounded border border-muted/30 inline-block">
+                      <div className="flex items-center font-mono text-sm bg-muted/20 px-3 py-1.5 rounded border border-muted/30 inline-block">
                         {student.rollNo}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium">{student.name}</div>
+                      <div className="flex items-center font-medium">{student.name}</div>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <TableCell>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="ghost"
                           size="sm"
