@@ -9,7 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building2, Users, BookOpen, GraduationCap, Plus, LogOut, Loader2, Trash2, Edit, Upload } from "lucide-react";
+import {
+  Building2, Users, BookOpen, GraduationCap, Plus, LogOut,
+  Loader2, Trash2, Edit, Upload, Search, ChevronLeft,
+  ChevronRight, FileSpreadsheet, X, ArrowUpDown, Download
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiService, type Department } from "@/services/api";
 
@@ -329,6 +333,19 @@ const DepartmentPage = () => {
     e.preventDefault();
     if (!department || !selectedClass || !bulkStudentFile) return;
 
+    // Validate file type
+    const validExtensions = ['.xlsx', '.xls'];
+    const fileExtension = bulkStudentFile.name.substring(bulkStudentFile.name.lastIndexOf('.')).toLowerCase();
+
+    if (!validExtensions.includes(fileExtension)) {
+      toast({
+        title: "Invalid File",
+        description: "Please upload an Excel file (.xlsx or .xls)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const result = await apiService.bulkAddStudents(department._id, selectedClass._id, bulkStudentFile);
       toast({
@@ -419,6 +436,14 @@ const DepartmentPage = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleEditStudent = (_student: Student) => {
+    // TODO: Implement edit student functionality
+    toast({
+      title: "Feature Coming Soon",
+      description: "Edit student functionality will be available soon",
+    });
   };
 
   const handleDeleteStudent = async (studentId: string) => {
@@ -1169,8 +1194,15 @@ const DepartmentPage = () => {
                             <GraduationCap className="w-5 h-5" />
                             <span>{classItem.section}</span>
                           </CardTitle>
-                          <CardDescription>
-                            {classItem.section} - Year {classItem.year}, Semester {classItem.semester}
+                          <CardDescription className="text-sm">
+                            <div className="grid grid-cols-2 gap-4 mt-1">
+                              <div className="text-center">
+                                <div className="font-medium text-primary">Year {classItem.year}</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="font-medium text-primary">Semester {classItem.semester}</div>
+                              </div>
+                            </div>
                           </CardDescription>
                         </div>
                         <Button
@@ -1187,9 +1219,13 @@ const DepartmentPage = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex justify-between text-sm">
-                        <span>Students:</span>
-                        <Badge variant="secondary" className="">{classItem.students?.length || 0}</Badge>
+                      <div className="flex justify-center">
+                        <div className="text-center">
+                          <div className="text-sm text-muted-foreground mb-1">Students</div>
+                          <Badge variant="secondary" className="text-sm px-3 py-1">
+                            {classItem.students?.length || 0}
+                          </Badge>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -1197,135 +1233,344 @@ const DepartmentPage = () => {
               </div>
             )}
 
-            {selectedClass && (
-              <div className="mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Students in {selectedClass.section}</h3>
-                  <div className="flex space-x-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline">
-                          <Upload className="w-4 h-4 mr-2" />
-                          Bulk Upload
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Bulk Upload Students to {selectedClass.section}</DialogTitle>
-                          <DialogDescription>
-                            Upload a CSV file with student data. Expected columns: rollnumber, name
-                          </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleBulkAddStudents} className="space-y-4">
-                          <div>
-                            <Label htmlFor="bulk-student-file">CSV File</Label>
-                            <Input
-                              id="bulk-student-file"
-                              type="file"
-                              accept=".csv"
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBulkStudentFile(e.target.files?.[0] || null)}
-                              required
-                            />
+{selectedClass && (
+  <div className="mt-8 border rounded-lg shadow-sm bg-white">
+    {/* Section Header */}
+    <div className="border-b p-6 bg-muted/5">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-xl font-semibold flex items-center gap-2">
+            <GraduationCap className="w-5 h-5" />
+            {selectedClass.section}
+            <Badge variant="outline" className="ml-2">
+              {selectedClass.students?.length || 0} Students
+            </Badge>
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Batch: {batches.find(b => b._id === selectedClass.batchId)?.name || 'N/A'} •
+            Year {selectedClass.year} • Semester {selectedClass.semester}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Upload className="w-4 h-4 mr-2" />
+                Bulk Import
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Import Students to {selectedClass.section}</DialogTitle>
+                <DialogDescription>
+                  Upload an Excel file (.xlsx, .xls) with student data.
+                  <div className="mt-2 text-sm bg-blue-50 p-3 rounded border border-blue-100">
+                    <p className="font-medium text-blue-800 mb-1">Expected format:</p>
+                    <ul className="list-disc list-inside text-blue-700 text-xs space-y-1">
+                      <li>First column: Roll Number (e.g., 160123737001)</li>
+                      <li>Second column: Full Name (e.g., John Doe)</li>
+                      <li>Include header row: "Roll Number" and "Name"</li>
+                    </ul>
+                  </div>
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleBulkAddStudents} className="space-y-4">
+                <div>
+                  <Label htmlFor="bulk-student-file" className="block text-sm font-medium mb-2">
+                    Excel File (.xlsx, .xls)
+                  </Label>
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                    <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Drag & drop or click to upload Excel file
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Supports .xlsx and .xls files
+                    </p>
+                    <Input
+                      id="bulk-student-file"
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBulkStudentFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('bulk-student-file')?.click()}
+                      className="mt-3"
+                    >
+                      Browse Excel Files
+                    </Button>
+                    {bulkStudentFile && (
+                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-md">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="bg-green-100 p-2 rounded mr-3">
+                              <FileSpreadsheet className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{bulkStudentFile.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {(bulkStudentFile.size / 1024).toFixed(2)} KB
+                              </p>
+                            </div>
                           </div>
-                          <Button type="submit" className="w-full">Upload Students</Button>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Student
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Add Student to {selectedClass.section}</DialogTitle>
-                        </DialogHeader>
-                        <form onSubmit={handleCreateStudentAndAddToClass} className="space-y-4">
-                          <div>
-                            <Label htmlFor="student-rollno">Roll Number</Label>
-                            <Input
-                              id="student-rollno"
-                              value={newStudent.rollNo}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewStudent({...newStudent, rollNo: e.target.value})}
-                              placeholder="e.g., 160123737001"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="student-name">Full Name</Label>
-                            <Input
-                              id="student-name"
-                              value={newStudent.name}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewStudent({...newStudent, name: e.target.value})}
-                              placeholder="e.g., John Doe"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="student-email">Email</Label>
-                            <Input
-                              id="student-email"
-                              type="email"
-                              value={newStudent.email}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewStudent({...newStudent, email: e.target.value})}
-                              placeholder="e.g., john.doe@college.edu"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="student-mobile">Mobile</Label>
-                            <Input
-                              id="student-mobile"
-                              value={newStudent.mobile}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewStudent({...newStudent, mobile: e.target.value})}
-                              placeholder="e.g., +91 9876543210"
-                            />
-                          </div>
-                          <Button type="submit" className="w-full">Add Student</Button>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setBulkStudentFile(null)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Roll Number</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedClass.students?.sort((a, b) => (a.rollNo || '').localeCompare(b.rollNo || '')).map((student) => (
-                      <TableRow key={student._id}>
-                        <TableCell className="font-medium">{student.rollNo}</TableCell>
-                        <TableCell>{student.name}</TableCell>
-                        <TableCell>{student.email || '-'}</TableCell>
-                        <TableCell>{student.mobile || '-'}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteStudent(student._id)}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={!bulkStudentFile}
+                >
+                  Import Students from Excel
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Student
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add Student to {selectedClass.section}</DialogTitle>
+                <DialogDescription>
+                  Add a new student to this section
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateStudentAndAddToClass} className="space-y-4">
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="student-rollno" className="text-sm font-medium">
+                      Roll Number *
+                    </Label>
+                    <Input
+                      id="student-rollno"
+                      value={newStudent.rollNo}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewStudent({...newStudent, rollNo: e.target.value})}
+                      placeholder="160123737001"
+                      required
+                      className="h-9"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Unique roll number for the student
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="student-name" className="text-sm font-medium">
+                      Full Name *
+                    </Label>
+                    <Input
+                      id="student-name"
+                      value={newStudent.name}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewStudent({...newStudent, name: e.target.value})}
+                      placeholder="John Doe"
+                      required
+                      className="h-9"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Complete name as per official records
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button type="submit" className="flex-1">
+                    Add Student
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setNewStudent({
+                      name: "",
+                      rollNo: "",
+                      email: "",
+                      mobile: ""
+                    })}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+    </div>
+
+    {/* Students Table */}
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="font-medium text-muted-foreground">
+          Student Roster ({selectedClass.students?.length || 0})
+        </h4>
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by roll number or name..."
+              className="pl-8 h-9 w-[300px]"
+              // Add search functionality if needed
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[160px]">
+                <div className="flex items-center">
+                  Roll Number
+                  <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground" />
+                </div>
+              </TableHead>
+              <TableHead>
+                <div className="flex items-center">
+                  Name
+                  <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground" />
+                </div>
+              </TableHead>
+              <TableHead className="text-right w-[100px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {selectedClass.students?.length ? (
+              selectedClass.students
+                .sort((a, b) => (a.rollNo || '').localeCompare(b.rollNo || ''))
+                .map((student) => (
+                  <TableRow key={student._id} className="hover:bg-muted/50 group">
+                    <TableCell>
+                      <div className="font-mono text-sm bg-muted/20 px-3 py-1.5 rounded border border-muted/30 inline-block">
+                        {student.rollNo}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">{student.name}</div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-muted"
+                          onClick={() => handleEditStudent(student)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
+                          onClick={() => handleDeleteStudent(student._id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={3} className="h-24 text-center">
+                  <div className="flex flex-col items-center justify-center py-6">
+                    <Users className="h-10 w-10 text-muted-foreground mb-3" />
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      No students in this section
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Add students individually or import from an Excel file
+                    </p>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <Upload className="w-3.5 h-3.5 mr-2" />
+                          Import from Excel
+                        </Button>
+                      </DialogTrigger>
+                    </Dialog>
+                  </div>
+                </TableCell>
+              </TableRow>
             )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Table Footer */}
+      {selectedClass.students?.length ? (
+        <div className="flex items-center justify-between mt-4 pt-4 border-t">
+          <div className="text-sm text-muted-foreground">
+            Showing {selectedClass.students.length} student{selectedClass.students.length !== 1 ? 's' : ''}
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="text-xs text-muted-foreground">
+              <Download className="inline h-3 w-3 mr-1" />
+              <a
+                href="#"
+                className="text-primary hover:underline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  // Add export to Excel functionality here
+                  toast({
+                    title: "Export Feature",
+                    description: "Export to Excel will be available soon",
+                  });
+                }}
+              >
+                Export to Excel
+              </a>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              className="h-8"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              className="h-8"
+            >
+              1
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              className="h-8"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  </div>
+)}
           </TabsContent>
         </Tabs>
       </div>
