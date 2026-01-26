@@ -838,24 +838,24 @@ const DepartmentPage = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Faculty ID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="text-center">Faculty ID</TableHead>
+                        <TableHead className="text-center">Name</TableHead>
+                        <TableHead className="text-center">Email</TableHead>
+                        <TableHead className="text-center">Phone</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {(facultyList as Faculty[]).map((faculty) => (
                         <TableRow key={faculty._id}>
-                          <TableCell className="font-medium">{faculty.facultyId}</TableCell>
-                          <TableCell>{faculty.name}</TableCell>
-                          <TableCell>{faculty.email}</TableCell>
-                          <TableCell>{faculty.mobile || '-'}</TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button 
-                                variant="outline" 
+                          <TableCell className="font-medium text-left">{faculty.facultyId}</TableCell>
+                          <TableCell className="text-left">{faculty.name}</TableCell>
+                          <TableCell className="text-left">{faculty.email}</TableCell>
+                          <TableCell className="text-left">{faculty.mobile || '-'}</TableCell>
+                          <TableCell className="text-left">
+                            <div className="flex gap-1">
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 onClick={() => handleEditFaculty(faculty)}
                               >
@@ -1061,21 +1061,21 @@ const DepartmentPage = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Code</TableHead>
-                        <TableHead>Subject Name</TableHead>
-                        <TableHead>Abbreviation</TableHead>
-                        <TableHead>Semester</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="text-center">Code</TableHead>
+                        <TableHead className="text-center">Subject Name</TableHead>
+                        <TableHead className="text-center">Abbreviation</TableHead>
+                        <TableHead className="text-center">Semester</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {subjects.map((subject) => (
                         <TableRow key={subject._id}>
-                          <TableCell className="font-medium">{subject.code}</TableCell>
-                          <TableCell>{subject.name}</TableCell>
-                          <TableCell>{subject.abbreviation || '-'}</TableCell>
-                          <TableCell>{subject.semester}</TableCell>
-                          <TableCell>
+                          <TableCell className="font-medium text-left">{subject.code}</TableCell>
+                          <TableCell className="text-left">{subject.name}</TableCell>
+                          <TableCell className="text-left">{subject.abbreviation || '-'}</TableCell>
+                          <TableCell className="text-left">{subject.semester}</TableCell>
+                          <TableCell className="text-left">
                             <Button
                               variant="outline"
                               size="sm"
@@ -1466,19 +1466,19 @@ const DepartmentPage = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[160px]">
-                <div className="flex items-center">
+              <TableHead className="w-[160px] text-center">
+                <div className="flex items-center justify-center">
                   Roll Number
                   <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground" />
                 </div>
               </TableHead>
-              <TableHead>
-                <div className="flex items-center">
+              <TableHead className="text-center">
+                <div className="flex items-center justify-center">
                   Name
                   <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground" />
                 </div>
               </TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead className="w-[100px] text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1488,14 +1488,14 @@ const DepartmentPage = () => {
                 .map((student) => (
                   <TableRow key={student._id} className="hover:bg-muted/50 group">
                     <TableCell>
-                      <div className="flex items-center font-mono text-sm bg-muted/20 px-3 py-1.5 rounded border border-muted/30 inline-block">
+                      <div className="inline-block font-mono text-sm bg-muted/20 px-3 py-1.5 rounded border border-muted/30">
                         {student.rollNo}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center font-medium">{student.name}</div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-left">
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="ghost"
