@@ -442,6 +442,27 @@ const DepartmentPage = () => {
     }
   };
 
+  const handleDeleteClass = async (classId: string) => {
+    if (!department) return;
+
+    if (!confirm('Are you sure you want to delete this section? This will also remove all students in this section.')) return;
+
+    try {
+      await apiService.deleteClass(department._id, classId);
+      toast({
+        title: "Success",
+        description: "Section deleted successfully",
+      });
+      loadDepartment();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete section",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleAddBatch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!department) return;
@@ -1142,13 +1163,28 @@ const DepartmentPage = () => {
                     }}
                   >
                     <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <GraduationCap className="w-5 h-5" />
-                        <span>{classItem.section}</span>
-                      </CardTitle>
-                      <CardDescription>
-                        {classItem.section} - Year {classItem.year}, Semester {classItem.semester}
-                      </CardDescription>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <CardTitle className="flex items-center space-x-2">
+                            <GraduationCap className="w-5 h-5" />
+                            <span>{classItem.section}</span>
+                          </CardTitle>
+                          <CardDescription>
+                            {classItem.section} - Year {classItem.year}, Semester {classItem.semester}
+                          </CardDescription>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClass(classItem._id);
+                          }}
+                          className="text-red-600 hover:text-red-800 hover:bg-red-50 ml-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <div className="flex justify-between text-sm">
