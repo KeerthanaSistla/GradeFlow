@@ -31,6 +31,7 @@ interface Subject {
   code: string;
   name: string;
   abbreviation?: string;
+  credits?: number;
   semester: string;
 }
 
@@ -79,7 +80,7 @@ const DepartmentPage = () => {
     code: "",
     name: "",
     abbreviation: "",
-    credits: "",
+    credits: "0",
     type: "theory",
     semester: "1"
   });
@@ -116,6 +117,7 @@ const DepartmentPage = () => {
     subjectCode: "",
     name: "",
     abbreviation: "",
+    credits: 0,
     semester: ""
   });
   const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
@@ -153,6 +155,7 @@ const DepartmentPage = () => {
         subjectCode: newSubject.code,
         name: newSubject.name,
         abbreviation: newSubject.abbreviation,
+        credits: Number(newSubject.credits),
         semester: sem
       });
       toast({
@@ -163,7 +166,7 @@ const DepartmentPage = () => {
         code: "",
         name: "",
         abbreviation: "",
-        credits: "",
+        credits: "0",
         type: "theory",
         semester: "1"
       });
@@ -322,7 +325,7 @@ const DepartmentPage = () => {
       const result = await apiService.bulkAddSubjects(department._id, bulkSubjectFile, bulkSubjectSemester);
       toast({
         title: "Success",
-        description: result.message,
+        description : result.message || "Subjects uploaded successfully",
       });
       if ((result as Record<string, unknown>).errors && ((result as Record<string, unknown>).errors as unknown[]).length > 0) {
         toast({
@@ -351,7 +354,7 @@ const DepartmentPage = () => {
       const result = await apiService.bulkAddFaculty(department._id, bulkFacultyFile);
       toast({
         title: "Success",
-        description: result.message,
+        description: result.message || "Faculty uploaded successfully",
       });
       setBulkFacultyFile(null);
       loadDepartment();
@@ -385,7 +388,7 @@ const DepartmentPage = () => {
       const result = await apiService.bulkAddStudents(department._id, selectedClass._id, bulkStudentFile);
       toast({
         title: "Success",
-        description: result.message,
+        description: result.message || "Students uploaded successfully",
       });
       setBulkStudentFile(null);
       loadDepartment();
@@ -436,6 +439,7 @@ const DepartmentPage = () => {
       subjectCode: subject.code,
       name: subject.name,
       abbreviation: subject.abbreviation || "",
+      credits: subject.credits || 0,
       semester: subject.semester
     });
     setShowEditSubjectDialog(true);
@@ -589,7 +593,7 @@ const DepartmentPage = () => {
       const response = await apiService.request(`/admin/departments/${departmentId}/batches`);
       // Handle API response that might be wrapped in data property
       const batchesData = (response as any).data || response;
-      setBatches(batchesData as Batch[]);
+      setBatches(Array.isArray(batchesData) ? batchesData : []);
     } catch (error: any) {
       console.error('Load batches error:', error);
       toast({
@@ -624,6 +628,7 @@ const DepartmentPage = () => {
       </div>
     );
   }
+
   // Group faculty by designation
   const facultyByRole = department.faculty?.reduce((acc: Record<string, Faculty[]>, faculty: Faculty) => {
     const roleKey = faculty.designation || 'Other';
@@ -644,7 +649,7 @@ const DepartmentPage = () => {
   });
 
   // Group subjects by semester
-  const subjectsBySemester = department.subjects?.reduce((acc: Record<string, Subject[]>, subject: Subject) => {
+  const subjectsBySemester = (department.subjects as Subject[])?.reduce((acc: Record<string, Subject[]>, subject: Subject) => {
     if (!acc[subject.semester]) {
       acc[subject.semester] = [];
     }
@@ -940,6 +945,16 @@ const DepartmentPage = () => {
                         Upload an Excel file with subject data. Select the semester for the subjects.
                       </DialogDescription>
                     </DialogHeader>
+                    <div className="mt-2 text-sm bg-blue-50 p-3 rounded border border-blue-100">
+                      <p className="font-medium text-blue-800 mb-1">Expected columns:</p>
+                      <ul className="list-disc list-inside text-blue-700 text-xs space-y-1">
+                        <li>Subject Code (required)</li>
+                        <li>Subject Name (required)</li>
+                        <li>Credits (required)</li>
+                        <li>Semester (required)</li>
+                        <li>Abbreviation (optional)</li>
+                      </ul>
+                    </div>
                     <form onSubmit={handleBulkAddSubjects} className="space-y-4">
                       <div>
                         <Label htmlFor="bulk-subject-semester">Semester</Label>
@@ -1018,6 +1033,17 @@ const DepartmentPage = () => {
                         />
                       </div>
                       <div>
+                        <Label htmlFor="subject-credits">Credits</Label>
+                        <Input
+                          id="subject-credits"
+                          type="number"
+                          value={newSubject.credits}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, credits: e.target.value})}
+                          placeholder="e.g., 3"
+                          min="0"
+                        />
+                      </div>
+                      <div>
                         <Label htmlFor="subject-semester">Semester</Label>
                         <Select
                           value={newSubject.semester}
@@ -1066,6 +1092,17 @@ const DepartmentPage = () => {
                         </DialogHeader>
                         <form onSubmit={(e) => handleAddSubject(e, semester)} className="space-y-4">
                           <div>
+                            <Label htmlFor="subject-credits">Credits</Label>
+                            <Input
+                              id="subject-credits"
+                              type="number"
+                              value={newSubject.credits}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, credits: e.target.value})}
+                              placeholder="e.g., 3"
+                              min="0"
+                            />
+                          </div>
+                          <div>
                             <Label htmlFor="subject-code">Subject Code</Label>
                             <Input
                               id="subject-code"
@@ -1105,6 +1142,7 @@ const DepartmentPage = () => {
                         <TableHead className="text-center">Code</TableHead>
                         <TableHead className="text-center">Subject Name</TableHead>
                         <TableHead className="text-center">Abbreviation</TableHead>
+                        <TableHead className="text-center">Credits</TableHead>
                         <TableHead className="text-center">Semester</TableHead>
                         <TableHead className="text-center">Actions</TableHead>
                       </TableRow>
@@ -1115,6 +1153,7 @@ const DepartmentPage = () => {
                           <TableCell className="font-medium text-left">{subject.code}</TableCell>
                           <TableCell className="text-left">{subject.name}</TableCell>
                           <TableCell className="text-left">{subject.abbreviation || '-'}</TableCell>
+                          <TableCell className="text-left">{subject.credits || '-'}</TableCell>
                           <TableCell className="text-left">{subject.semester}</TableCell>
                           <TableCell className="text-left">
                             <div className="flex gap-1">
@@ -1178,6 +1217,17 @@ const DepartmentPage = () => {
                       value={editSubjectData.abbreviation}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditSubjectData({...editSubjectData, abbreviation: e.target.value})}
                       placeholder="e.g., SE"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-subject-credits">Credits</Label>
+                    <Input
+                      id="edit-subject-credits"
+                      type="number"
+                      value={editSubjectData.credits}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditSubjectData({...editSubjectData, credits: Number(e.target.value)})}
+                      placeholder="e.g., 3"
+                      min="0"
                     />
                   </div>
                   <div>

@@ -156,6 +156,7 @@ export async function getDepartmentById(req: AuthRequest, res: Response) {
       code: s.subjectCode,
       name: s.name,
       abbreviation: s.abbreviation,
+      credits: s.credits,
       semester: s.semester
     }));
     const rawClasses = await Section.find({ departmentId }).populate('students').populate('batchId').select('-createdAt -updatedAt');
@@ -515,10 +516,10 @@ export async function deleteClassFromDepartment(req: AuthRequest, res: Response)
 export async function addSubjectToDepartment(req: AuthRequest, res: Response) {
   try {
     const { departmentId } = req.params;
-    const { subjectCode, name, abbreviation, semester } = req.body;
+    const { subjectCode, name, abbreviation, credits, semester } = req.body;
 
-    if (!subjectCode || !name || !semester) {
-      return res.status(400).json({ error: 'Subject code, name, and semester required' });
+    if (!subjectCode || !name || !credits || !semester) {
+      return res.status(400).json({ error: 'Subject code, name, credits, and semester required' });
     }
 
     // Check if department exists
@@ -545,6 +546,7 @@ export async function addSubjectToDepartment(req: AuthRequest, res: Response) {
       subjectCode: subjectCode,
       name,
       abbreviation,
+      credits: parseInt(credits),
       semester: parseInt(semester),
       departmentId
     });
@@ -566,7 +568,7 @@ export async function addSubjectToDepartment(req: AuthRequest, res: Response) {
 export async function updateSubjectDetails(req: AuthRequest, res: Response) {
   try {
     const { departmentId, subjectId } = req.params;
-    const { subjectCode, name, abbreviation, semester } = req.body;
+    const { subjectCode, name, abbreviation, semester, credits } = req.body;
 
     // Import Subject model
     const Subject = (await import('../models/Subject')).default;
@@ -598,6 +600,7 @@ export async function updateSubjectDetails(req: AuthRequest, res: Response) {
     if (subjectCode) subject.subjectCode = subjectCode;
     if (name) subject.name = name;
     if (abbreviation !== undefined) subject.abbreviation = abbreviation;
+    if (credits) subject.credits = parseInt(credits);
     if (semester) subject.semester = parseInt(semester);
 
     await subject.save();
@@ -646,15 +649,10 @@ export async function deleteSubjectFromDepartment(req: AuthRequest, res: Respons
 export async function bulkAddSubjectsToDepartment(req: AuthRequest, res: Response) {
   try {
     const { departmentId } = req.params;
-    const { semester } = req.body;
     const file = (req as any).file;
 
     if (!file) {
       return res.status(400).json({ error: 'Excel file required' });
-    }
-
-    if (!semester) {
-      return res.status(400).json({ error: 'Semester required' });
     }
 
     // Check if department exists
@@ -684,10 +682,12 @@ export async function bulkAddSubjectsToDepartment(req: AuthRequest, res: Respons
         const subjectCode = row['Subject Code'] || row['subject code'] || row['SubjectCode'] || row['subjectCode'] || row['Code'] || row['code'];
         const subjectName = row['Subject Name'] || row['subject name'] || row['SubjectName'] || row['subjectName'] || row['Name'] || row['name'];
         const abbreviation = row['Abbreviation'] || row['abbreviation'] || row['Abbr'] || row['abbr'] || '';
+        const semester = row['Semester'] || row['semester'] || row['Sem'] || row['sem'];
+        const credits = row['Credits'] || row['credits'] || row['Credit'] || row['credit'];
 
         // Validate required fields
-        if (!subjectCode || !subjectName) {
-          errors.push(`Row ${i + 2}: Missing required fields (Subject Code, Subject Name)`);
+        if (!subjectCode || !subjectName || !credits || !semester) {
+          errors.push(`Row ${i + 2}: Missing required fields (Subject Code, Subject Name, Credits, Semester)`);
           continue;
         }
 
@@ -708,6 +708,7 @@ export async function bulkAddSubjectsToDepartment(req: AuthRequest, res: Respons
           name: subjectName,
           abbreviation: abbreviation,
           semester: parseInt(semester),
+          credits: parseInt(credits),
           departmentId
         });
 

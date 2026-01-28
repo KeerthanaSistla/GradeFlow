@@ -28,7 +28,7 @@ export interface Department {
     code: string;
     name: string;
     abbreviation?: string;
-    semester: string;
+    credits: number;
   }>;
   classes?: Array<{
     _id: string;
@@ -271,10 +271,12 @@ class ApiService {
   }
 
   // Bulk upload methods
-  async bulkAddSubjects(departmentId: string, file: File, semester: string): Promise<ApiResponse> {
+  async bulkAddSubjects(departmentId: string, file: File, semester?: string): Promise<ApiResponse> {
     const formData = new FormData();
     formData.append('excelFile', file);
-    formData.append('semester', semester);
+    if (semester) {
+      formData.append('semester', semester);
+    }
 
     return this.request(`/admin/departments/${departmentId}/subjects/bulk`, {
       method: 'POST',
