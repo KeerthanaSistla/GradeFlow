@@ -26,13 +26,15 @@ interface Faculty {
   designation?: string;
 }
 
+type SubjectType = "T" | "P";
+
 interface Subject {
   _id: string;
   code: string;
   name: string;
   abbreviation?: string;
   credits?: number;
-  type?: 'theory' | 'practical';
+  type?: SubjectType;
   semester: string;
 }
 
@@ -82,7 +84,7 @@ const DepartmentPage = () => {
     name: "",
     abbreviation: "",
     credits: "0",
-    type: "theory",
+    type: "T" as SubjectType,
     semester: "1"
   });
   const [bulkSubjectSemester, setBulkSubjectSemester] = useState("");
@@ -119,11 +121,10 @@ const DepartmentPage = () => {
     name: "",
     abbreviation: "",
     credits: 0,
-    type: "theory",
+    type: "T" as SubjectType,
     semester: ""
   });
   const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
-  const [subjectType, setSubjectType] = useState<"T" | "P">("T");
 
   useEffect(() => {
     loadDepartment();
@@ -159,7 +160,7 @@ const DepartmentPage = () => {
         name: newSubject.name,
         abbreviation: newSubject.abbreviation,
         credits: Number(newSubject.credits),
-        type: subjectType,
+        type: newSubject.type,
         semester: sem
       });
       toast({
@@ -171,7 +172,7 @@ const DepartmentPage = () => {
         name: "",
         abbreviation: "",
         credits: "0",
-        type: "theory",
+        type: "T" as SubjectType,
         semester: "1"
       });
       loadDepartment();
@@ -444,7 +445,7 @@ const DepartmentPage = () => {
       name: subject.name,
       abbreviation: subject.abbreviation || "",
       credits: subject.credits || 0,
-      type: subject.type || "theory",
+      type: subject.type || "T",
       semester: subject.semester
     });
     setShowEditSubjectDialog(true);
@@ -1037,43 +1038,44 @@ const DepartmentPage = () => {
                           placeholder="e.g., SE"
                         />
                       </div>
-                      <div></div>
-                      <div>
-                        <Label htmlFor="subject-credits">Credits</Label>
-                        <Input
-                          id="subject-credits"
-                          type="number"
-                          value={newSubject.credits}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, credits: e.target.value})}
-                          placeholder="e.g., 3"
-                          min="0"
-                        />
-                      </div>
+                      <div className="flex gap-4 items-end">
+                        {/* Credits */}
+                        <div className="flex-1">
+                          <Label htmlFor="subject-credits">Credits</Label>
+                          <Input
+                            id="subject-credits"
+                            type="number"
+                            value={newSubject.credits}
+                            onChange={(e) =>
+                              setNewSubject({ ...newSubject, credits: e.target.value })
+                            }
+                            placeholder="e.g., 3"
+                            min="0"
+                          />
+                        </div>
 
-                      <div className="flex items-center gap-2 text-xs text-blue-700">
-                        <span>Type:</span>
-                        <button
-                          type="button"
-                          onClick={() => setSubjectType("T")}
-                          className={`px-2 py-0.5 rounded border ${
-                            subjectType === "T"
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white border-blue-300"
-                          }`}
-                        >
-                          T
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSubjectType("P")}
-                          className={`px-2 py-0.5 rounded border ${
-                            subjectType === "P"
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white border-blue-300"
-                          }`}
-                        >
-                          P
-                        </button>
+                        {/* Theory / Practical Toggle */}
+                        <div>
+                          <Label>Type</Label>
+                          <div className="flex gap-1 mt-1">
+                            {(["T", "P"] as SubjectType[]).map((val) => (
+                              <button
+                                key={val}
+                                type="button"
+                                onClick={() =>
+                                  setNewSubject({ ...newSubject, type: val })
+                                }
+                                className={`px-3 py-1 rounded border text-sm ${
+                                  newSubject.type === val
+                                    ? "bg-blue-600 text-white border-blue-600"
+                                    : "bg-white border-blue-300 text-blue-700"
+                                }`}
+                              >
+                                {val}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
 
@@ -1155,41 +1157,44 @@ const DepartmentPage = () => {
                               placeholder="e.g., SE"
                             />
                           </div>
-                          <div>
-                            <Label htmlFor="subject-credits">Credits</Label>
-                            <Input
-                              id="subject-credits"
-                              type="number"
-                              value={newSubject.credits}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, credits: e.target.value})}
-                              placeholder="e.g., 3"
-                              min="0"
-                            />
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-blue-700">
-                            <span>Type:</span>
-                            <button
-                              type="button"
-                              onClick={() => setSubjectType("T")}
-                              className={`px-2 py-0.5 rounded border ${
-                                subjectType === "T"
-                                  ? "bg-blue-600 text-white border-blue-600"
-                                  : "bg-white border-blue-300"
-                              }`}
-                            >
-                              T
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setSubjectType("P")}
-                              className={`px-2 py-0.5 rounded border ${
-                                subjectType === "P"
-                                  ? "bg-blue-600 text-white border-blue-600"
-                                  : "bg-white border-blue-300"
-                              }`}
-                            >
-                              P
-                            </button>
+                          <div className="flex gap-4 items-end">
+                            {/* Credits */}
+                            <div className="flex-1">
+                              <Label htmlFor="subject-credits">Credits</Label>
+                              <Input
+                                id="subject-credits"
+                                type="number"
+                                value={newSubject.credits}
+                                onChange={(e) =>
+                                  setNewSubject({ ...newSubject, credits: e.target.value })
+                                }
+                                placeholder="e.g., 3"
+                                min="0"
+                              />
+                            </div>
+
+                            {/* Theory / Practical Toggle */}
+                            <div>
+                              <Label>Type</Label>
+                              <div className="flex gap-1 mt-1">
+                                {(["T", "P"] as SubjectType[]).map((val) => (
+                                  <button
+                                    key={val}
+                                    type="button"
+                                    onClick={() =>
+                                      setNewSubject({ ...newSubject, type: val })
+                                    }
+                                    className={`px-3 py-1 rounded border text-sm ${
+                                      newSubject.type === val
+                                        ? "bg-blue-600 text-white border-blue-600"
+                                        : "bg-white border-blue-300 text-blue-700"
+                                    }`}
+                                  >
+                                    {val}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           </div>
 
 
@@ -1292,7 +1297,29 @@ const DepartmentPage = () => {
                       min="0"
                     />
                   </div>
-                  
+
+                  <div>
+                    <Label>Type</Label>
+                    <div className="flex gap-1 mt-1">
+                      {(["T", "P"] as SubjectType[]).map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() =>
+                            setEditSubjectData({ ...editSubjectData, type: val })
+                          }
+                          className={`px-3 py-1 rounded border text-sm ${
+                            editSubjectData.type === val
+                              ? "bg-blue-600 text-white border-blue-600"
+                              : "bg-white border-blue-300 text-blue-700"
+                          }`}
+                        >
+                          {val}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div>
                     <Label htmlFor="edit-subject-semester">Semester</Label>
                     <Select
