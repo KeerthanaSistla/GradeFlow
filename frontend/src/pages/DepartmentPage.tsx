@@ -1143,7 +1143,6 @@ const DepartmentPage = () => {
                         <TableHead className="text-center">Subject Name</TableHead>
                         <TableHead className="text-center">Abbreviation</TableHead>
                         <TableHead className="text-center">Credits</TableHead>
-                        <TableHead className="text-center">Semester</TableHead>
                         <TableHead className="text-center">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1154,7 +1153,6 @@ const DepartmentPage = () => {
                           <TableCell className="text-left">{subject.name}</TableCell>
                           <TableCell className="text-left">{subject.abbreviation || '-'}</TableCell>
                           <TableCell className="text-left">{subject.credits || '-'}</TableCell>
-                          <TableCell className="text-left">{subject.semester}</TableCell>
                           <TableCell className="text-left">
                             <div className="flex gap-1">
                               <Button
