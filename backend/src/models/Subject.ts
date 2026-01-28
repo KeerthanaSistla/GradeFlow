@@ -5,6 +5,7 @@ export interface ISubject extends Document {
   name: string;
   abbreviation?: string;
   credits: number;
+  type: 'theory' | 'practical';
   semester: number;
   departmentId: Types.ObjectId;
   createdAt: Date;
@@ -16,6 +17,7 @@ const SubjectSchema = new Schema<ISubject>(
     name: { type: String, required: true },
     abbreviation: { type: String },
     credits: { type: Number, required: true },
+    type: { type: String, enum: ['theory', 'practical'], default: 'theory' },
     semester: { type: Number, required: true },
     departmentId: { type: Schema.Types.ObjectId, ref: 'Department', required: true }
   },

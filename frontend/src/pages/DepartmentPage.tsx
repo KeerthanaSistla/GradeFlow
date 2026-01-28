@@ -32,6 +32,7 @@ interface Subject {
   name: string;
   abbreviation?: string;
   credits?: number;
+  type?: 'theory' | 'practical';
   semester: string;
 }
 
@@ -118,9 +119,11 @@ const DepartmentPage = () => {
     name: "",
     abbreviation: "",
     credits: 0,
+    type: "theory",
     semester: ""
   });
   const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
+  const [subjectType, setSubjectType] = useState<"T" | "P">("T");
 
   useEffect(() => {
     loadDepartment();
@@ -156,6 +159,7 @@ const DepartmentPage = () => {
         name: newSubject.name,
         abbreviation: newSubject.abbreviation,
         credits: Number(newSubject.credits),
+        type: subjectType,
         semester: sem
       });
       toast({
@@ -440,6 +444,7 @@ const DepartmentPage = () => {
       name: subject.name,
       abbreviation: subject.abbreviation || "",
       credits: subject.credits || 0,
+      type: subject.type || "theory",
       semester: subject.semester
     });
     setShowEditSubjectDialog(true);
@@ -950,7 +955,7 @@ const DepartmentPage = () => {
                       <ul className="list-disc list-inside text-blue-700 text-xs space-y-1">
                         <li>Subject Code (required)</li>
                         <li>Subject Name (required)</li>
-                        <li>Credits (required)</li>
+                        <li>Credits (required)</li><li>Type (T or P, required)</li>
                         <li>Semester (required)</li>
                         <li>Abbreviation (optional)</li>
                       </ul>
@@ -1032,6 +1037,7 @@ const DepartmentPage = () => {
                           placeholder="e.g., SE"
                         />
                       </div>
+                      <div></div>
                       <div>
                         <Label htmlFor="subject-credits">Credits</Label>
                         <Input
@@ -1043,6 +1049,34 @@ const DepartmentPage = () => {
                           min="0"
                         />
                       </div>
+
+                      <div className="flex items-center gap-2 text-xs text-blue-700">
+                        <span>Type:</span>
+                        <button
+                          type="button"
+                          onClick={() => setSubjectType("T")}
+                          className={`px-2 py-0.5 rounded border ${
+                            subjectType === "T"
+                              ? "bg-blue-600 text-white border-blue-600"
+                              : "bg-white border-blue-300"
+                          }`}
+                        >
+                          T
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSubjectType("P")}
+                          className={`px-2 py-0.5 rounded border ${
+                            subjectType === "P"
+                              ? "bg-blue-600 text-white border-blue-600"
+                              : "bg-white border-blue-300"
+                          }`}
+                        >
+                          P
+                        </button>
+                      </div>
+
+
                       <div>
                         <Label htmlFor="subject-semester">Semester</Label>
                         <Select
@@ -1091,17 +1125,7 @@ const DepartmentPage = () => {
                           <DialogTitle>Add Subject to Semester {semester}</DialogTitle>
                         </DialogHeader>
                         <form onSubmit={(e) => handleAddSubject(e, semester)} className="space-y-4">
-                          <div>
-                            <Label htmlFor="subject-credits">Credits</Label>
-                            <Input
-                              id="subject-credits"
-                              type="number"
-                              value={newSubject.credits}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, credits: e.target.value})}
-                              placeholder="e.g., 3"
-                              min="0"
-                            />
-                          </div>
+
                           <div>
                             <Label htmlFor="subject-code">Subject Code</Label>
                             <Input
@@ -1131,6 +1155,44 @@ const DepartmentPage = () => {
                               placeholder="e.g., SE"
                             />
                           </div>
+                          <div>
+                            <Label htmlFor="subject-credits">Credits</Label>
+                            <Input
+                              id="subject-credits"
+                              type="number"
+                              value={newSubject.credits}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSubject({...newSubject, credits: e.target.value})}
+                              placeholder="e.g., 3"
+                              min="0"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-blue-700">
+                            <span>Type:</span>
+                            <button
+                              type="button"
+                              onClick={() => setSubjectType("T")}
+                              className={`px-2 py-0.5 rounded border ${
+                                subjectType === "T"
+                                  ? "bg-blue-600 text-white border-blue-600"
+                                  : "bg-white border-blue-300"
+                              }`}
+                            >
+                              T
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSubjectType("P")}
+                              className={`px-2 py-0.5 rounded border ${
+                                subjectType === "P"
+                                  ? "bg-blue-600 text-white border-blue-600"
+                                  : "bg-white border-blue-300"
+                              }`}
+                            >
+                              P
+                            </button>
+                          </div>
+
+
                           <Button type="submit" className="w-full">Add Subject</Button>
                         </form>
                       </DialogContent>
@@ -1143,6 +1205,7 @@ const DepartmentPage = () => {
                         <TableHead className="text-center">Subject Name</TableHead>
                         <TableHead className="text-center">Abbreviation</TableHead>
                         <TableHead className="text-center">Credits</TableHead>
+                        <TableHead className="text-center">T/P</TableHead>
                         <TableHead className="text-center">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1153,6 +1216,7 @@ const DepartmentPage = () => {
                           <TableCell className="text-left">{subject.name}</TableCell>
                           <TableCell className="text-left">{subject.abbreviation || '-'}</TableCell>
                           <TableCell className="text-left">{subject.credits || '-'}</TableCell>
+                          <TableCell className="text-left">{subject.type}</TableCell>
                           <TableCell className="text-left">
                             <div className="flex gap-1">
                               <Button
@@ -1228,6 +1292,7 @@ const DepartmentPage = () => {
                       min="0"
                     />
                   </div>
+                  
                   <div>
                     <Label htmlFor="edit-subject-semester">Semester</Label>
                     <Select
