@@ -1634,14 +1634,6 @@ const DepartmentPage = () => {
                   Download Sample CSV
                 </Button>
               </div>
-              <div className="mb-4 text-sm bg-blue-50 p-3 rounded border border-blue-100">
-                <p className="font-medium text-blue-800 mb-1">Expected format:</p>
-                <ul className="list-disc list-inside text-blue-700 text-xs space-y-1">
-                  <li>First column: Roll Number (e.g., 160123737001)</li>
-                  <li>Second column: Full Name (e.g., John Doe)</li>
-                  <li>Include header row: "Roll Number" and "Name"</li>
-                </ul>
-              </div>
               <form onSubmit={handleBulkAddStudents} className="space-y-4">
                 <div>
                   <Label htmlFor="bulk-student-file" className="block text-sm font-medium mb-2">
