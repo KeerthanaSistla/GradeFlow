@@ -1016,16 +1016,6 @@ const DepartmentPage = () => {
                         Download Sample CSV
                       </Button>
                     </div>
-                    <div className="mt-2 text-sm bg-blue-50 p-3 rounded border border-blue-100">
-                      <p className="font-medium text-blue-800 mb-1">Expected columns:</p>
-                      <ul className="list-disc list-inside text-blue-700 text-xs space-y-1">
-                        <li>Subject Code (required)</li>
-                        <li>Subject Name (required)</li>
-                        <li>Credits (required)</li><li>Type (T or P, required)</li>
-                        <li>Semester (required)</li>
-                        <li>Abbreviation (optional)</li>
-                      </ul>
-                    </div>
                     <form onSubmit={handleBulkAddSubjects} className="space-y-4">
                       <div>
                         <Label htmlFor="bulk-subject-semester">Semester</Label>
