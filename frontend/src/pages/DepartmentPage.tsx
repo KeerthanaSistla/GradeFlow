@@ -34,8 +34,8 @@ interface Subject {
   name: string;
   abbreviation?: string;
   credits?: number;
-  type?: SubjectType;
-  semester: string;
+  type?: string;
+  semester: number;
 }
 
 interface Class {
@@ -121,7 +121,7 @@ const DepartmentPage = () => {
     name: "",
     abbreviation: "",
     credits: 0,
-    type: "T" as SubjectType,
+    type: "T",
     semester: ""
   });
   const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
@@ -446,7 +446,7 @@ const DepartmentPage = () => {
       abbreviation: subject.abbreviation || "",
       credits: subject.credits || 0,
       type: subject.type || "T",
-      semester: subject.semester
+      semester: subject.semester.toString()
     });
     setShowEditSubjectDialog(true);
   };
@@ -1286,7 +1286,7 @@ const DepartmentPage = () => {
                           <TableCell className="text-left">{subject.name}</TableCell>
                           <TableCell className="text-left">{subject.abbreviation || '-'}</TableCell>
                           <TableCell className="text-left">{subject.credits || '-'}</TableCell>
-                          <TableCell className="text-left">{subject.type}</TableCell>
+                          <TableCell className="text-left">{subject.type === 'theory' ? 'T' : subject.type === 'practical' ? 'P' : subject.type}</TableCell>
                           <TableCell className="text-left">
                             <div className="flex gap-1">
                               <Button

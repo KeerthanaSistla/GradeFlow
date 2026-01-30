@@ -157,6 +157,7 @@ export async function getDepartmentById(req: AuthRequest, res: Response) {
       name: s.name,
       abbreviation: s.abbreviation,
       credits: s.credits,
+      type: s.type,
       semester: s.semester
     }));
     const rawClasses = await Section.find({ departmentId }).populate('students').populate('batchId').select('-createdAt -updatedAt');
@@ -568,7 +569,7 @@ export async function addSubjectToDepartment(req: AuthRequest, res: Response) {
 export async function updateSubjectDetails(req: AuthRequest, res: Response) {
   try {
     const { departmentId, subjectId } = req.params;
-    const { subjectCode, name, abbreviation, semester, credits } = req.body;
+    const { subjectCode, name, abbreviation, semester, credits, type } = req.body;
 
     // Import Subject model
     const Subject = (await import('../models/Subject')).default;
@@ -602,6 +603,11 @@ export async function updateSubjectDetails(req: AuthRequest, res: Response) {
     if (abbreviation !== undefined) subject.abbreviation = abbreviation;
     if (credits) subject.credits = parseInt(credits);
     if (semester) subject.semester = parseInt(semester);
+    if (type) {
+      // Map frontend "T"/"P" to backend "theory"/"practical"
+      const mappedType = type === 'T' ? 'theory' : type === 'P' ? 'practical' : type;
+      subject.type = mappedType;
+    }
 
     await subject.save();
 
@@ -684,6 +690,7 @@ export async function bulkAddSubjectsToDepartment(req: AuthRequest, res: Respons
         const abbreviation = row['Abbreviation'] || row['abbreviation'] || row['Abbr'] || row['abbr'] || '';
         const semester = row['Semester'] || row['semester'] || row['Sem'] || row['sem'];
         const credits = row['Credits'] || row['credits'] || row['Credit'] || row['credit'];
+        const type = row['Type'] || row['type'] || row['T/P'] || row['t/p'] || 'T';
 
         // Validate required fields
         if (!subjectCode || !subjectName || !credits || !semester) {
@@ -709,6 +716,7 @@ export async function bulkAddSubjectsToDepartment(req: AuthRequest, res: Respons
           abbreviation: abbreviation,
           semester: parseInt(semester),
           credits: parseInt(credits),
+          type: type === 'T' ? 'theory' : type === 'P' ? 'practical' : 'theory',
           departmentId
         });
 

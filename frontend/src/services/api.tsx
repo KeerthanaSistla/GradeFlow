@@ -29,6 +29,8 @@ export interface Department {
     name: string;
     abbreviation?: string;
     credits: number;
+    type: string;
+    semester: number;
   }>;
   classes?: Array<{
     _id: string;
