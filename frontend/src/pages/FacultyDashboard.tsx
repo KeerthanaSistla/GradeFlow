@@ -32,22 +32,57 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { FileUpload } from "@/components/ui/file-upload";
 import { apiService } from "@/services/api";
+
+interface Subject {
+  _id: string;
+  subjectId: string;
+  subjectCode: string;
+  subjectName: string;
+  classCode: string;
+  credits: number;
+  studentCount: number;
+}
+
+interface Student {
+  rollNo: string;
+  name: string;
+  marks?: {
+    slipTest1?: number;
+    slipTest2?: number;
+    slipTest3?: number;
+    assignment1?: number;
+    assignment2?: number;
+    classTest1?: number;
+    classTest2?: number;
+    attendance?: number;
+    totalMarks?: number;
+  };
+}
+
+interface AvailableSubject {
+  _id: string;
+  subjectCode: string;
+  subjectName: string;
+  classCode: string;
+  credits: number;
+}
 
 const FacultyDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [facultyData, setFacultyData] = useState(null);
-  const [selectedClass, setSelectedClass] = useState(null);
+  const [facultyData, setFacultyData] = useState<{ subjects: Subject[] } | null>(null);
+  const [selectedClass, setSelectedClass] = useState<Subject | null>(null);
   const [selectedTest, setSelectedTest] = useState("");
-  const [bulkMarks, setBulkMarks] = useState({});
-  const [students, setStudents] = useState([]);
+  const [bulkMarks, setBulkMarks] = useState<Record<string, string>>({});
+  const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [excelFile, setExcelFile] = useState(null);
+  const [excelFile, setExcelFile] = useState<File | null>(null);
   const [excelUploading, setExcelUploading] = useState(false);
-  const [availableSubjects, setAvailableSubjects] = useState([]);
-  const [selectedSubjectForAssignment, setSelectedSubjectForAssignment] = useState(null);
+  const [availableSubjects, setAvailableSubjects] = useState<AvailableSubject[]>([]);
+  const [selectedSubjectForAssignment, setSelectedSubjectForAssignment] = useState<AvailableSubject | null>(null);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [assignmentSections, setAssignmentSections] = useState('');

@@ -12,9 +12,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   Building2, Users, BookOpen, GraduationCap, Plus, LogOut,
   Loader2, Trash2, Edit, Upload, Search, ChevronLeft,
-  ChevronRight, FileSpreadsheet, X, ArrowUpDown, Download
+  ChevronRight, ArrowUpDown, Download
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { FileUpload } from "@/components/ui/file-upload";
 import { apiService, type Department } from "@/services/api";
 
 interface Faculty {
@@ -812,38 +813,20 @@ const DepartmentPage = () => {
                         Upload an Excel file with faculty data.
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                      <p className="text-sm text-blue-800 mb-2">
-                        <strong>Download sample format:</strong>
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = '/sample-faculty.csv';
-                          link.download = 'sample-faculty.csv';
-                          link.click();
-                        }}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download Sample CSV
-                      </Button>
-                    </div>
                     <form onSubmit={handleBulkAddFaculty} className="space-y-4">
-                      <div>
-                        <Label htmlFor="bulk-faculty-file">Excel File</Label>
-                        <Input
-                          id="bulk-faculty-file"
-                          type="file"
-                          accept=".xlsx,.xls"
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBulkFacultyFile(e.target.files?.[0] || null)}
-                          required
-                        />
-                      </div>
-                      <Button type="submit" className="w-full">Upload Faculty</Button>
+                      <FileUpload
+                        id="bulk-faculty-file"
+                        label="Excel File"
+                        accept=".xlsx,.xls"
+                        maxSize={5}
+                        sampleFileUrl="/sample-faculty.csv"
+                        sampleFileName="sample-faculty.csv"
+                        value={bulkFacultyFile}
+                        onFileChange={setBulkFacultyFile}
+                      />
+                      <Button type="submit" className="w-full" disabled={!bulkFacultyFile}>
+                        Upload Faculty
+                      </Button>
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -996,26 +979,6 @@ const DepartmentPage = () => {
                         Upload an Excel file with subject data. Select the semester for the subjects.
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                      <p className="text-sm text-blue-800 mb-2">
-                        <strong>Download sample format:</strong>
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = '/sample-subjects.csv';
-                          link.download = 'sample-subjects.csv';
-                          link.click();
-                        }}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download Sample CSV
-                      </Button>
-                    </div>
                     <form onSubmit={handleBulkAddSubjects} className="space-y-4">
                       <div>
                         <Label htmlFor="bulk-subject-semester">Semester</Label>
@@ -1035,17 +998,19 @@ const DepartmentPage = () => {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
-                        <Label htmlFor="bulk-subject-file">Excel File</Label>
-                        <Input
-                          id="bulk-subject-file"
-                          type="file"
-                          accept=".xlsx,.xls"
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBulkSubjectFile(e.target.files?.[0] || null)}
-                          required
-                        />
-                      </div>
-                      <Button type="submit" className="w-full">Upload Subjects</Button>
+                      <FileUpload
+                        id="bulk-subject-file"
+                        label="Excel File"
+                        accept=".xlsx,.xls"
+                        maxSize={5}
+                        sampleFileUrl="/sample-subjects.csv"
+                        sampleFileName="sample-subjects.csv"
+                        value={bulkSubjectFile}
+                        onFileChange={setBulkSubjectFile}
+                      />
+                      <Button type="submit" className="w-full" disabled={!bulkSubjectFile || !bulkSubjectSemester}>
+                        Upload Subjects
+                      </Button>
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -1604,7 +1569,7 @@ const DepartmentPage = () => {
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
                 <Upload className="w-4 h-4 mr-2" />
-                Bulk Import
+                Bulk Upload
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
@@ -1614,83 +1579,17 @@ const DepartmentPage = () => {
                   Upload an Excel file (.xlsx, .xls) with student data.
                 </DialogDescription>
               </DialogHeader>
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-sm text-blue-800 mb-2">
-                  <strong>Download sample format:</strong>
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const link = document.createElement('a');
-                    link.href = '/sample-students.csv';
-                    link.download = 'sample-students.csv';
-                    link.click();
-                  }}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download Sample CSV
-                </Button>
-              </div>
               <form onSubmit={handleBulkAddStudents} className="space-y-4">
-                <div>
-                  <Label htmlFor="bulk-student-file" className="block text-sm font-medium mb-2">
-                    Excel File (.xlsx, .xls)
-                  </Label>
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-                    <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Drag & drop or click to upload Excel file
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Supports .xlsx and .xls files
-                    </p>
-                    <Input
-                      id="bulk-student-file"
-                      type="file"
-                      accept=".xlsx,.xls"
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBulkStudentFile(e.target.files?.[0] || null)}
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => document.getElementById('bulk-student-file')?.click()}
-                      className="mt-3"
-                    >
-                      Browse Excel Files
-                    </Button>
-                    {bulkStudentFile && (
-                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-md">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="bg-green-100 p-2 rounded mr-3">
-                              <FileSpreadsheet className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{bulkStudentFile.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {(bulkStudentFile.size / 1024).toFixed(2)} KB
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setBulkStudentFile(null)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <FileUpload
+                  id="bulk-student-file"
+                  label="Excel File"
+                  accept=".xlsx,.xls"
+                  maxSize={5}
+                  sampleFileUrl="/sample-students.csv"
+                  sampleFileName="sample-students.csv"
+                  value={bulkStudentFile}
+                  onFileChange={setBulkStudentFile}
+                />
                 <Button
                   type="submit"
                   className="w-full"
