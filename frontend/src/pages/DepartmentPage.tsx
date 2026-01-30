@@ -809,7 +809,7 @@ const DepartmentPage = () => {
                     <DialogHeader>
                       <DialogTitle>Bulk Upload Faculty</DialogTitle>
                       <DialogDescription>
-                        Upload an Excel file with faculty data. Expected columns: Name, Email, Mobile, Faculty ID, Role
+                        Upload an Excel file with faculty data.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
