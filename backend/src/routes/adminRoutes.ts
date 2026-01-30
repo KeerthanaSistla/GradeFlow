@@ -23,6 +23,7 @@ import {
   bulkAddFacultyToDepartment,
   createBatchForDepartment,
   getBatchesForDepartment,
+  deleteBatchFromDepartment,
   createStudentAndAddToClass,
   bulkAddStudentsToClass,
   deleteStudentFromClass
@@ -95,6 +96,8 @@ router.delete('/departments/:departmentId/subjects/:subjectId', ...adminMiddlewa
 router.post('/departments/:departmentId/batches', ...adminMiddleware, createBatchForDepartment);
 // @ts-ignore - Type conflicts due to multiple express type definitions
 router.get('/departments/:departmentId/batches', ...adminMiddleware, getBatchesForDepartment);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.delete('/departments/:departmentId/batches/:batchId', ...adminMiddleware, deleteBatchFromDepartment);
 
 // Student management
 // @ts-ignore - Type conflicts due to multiple express type definitions

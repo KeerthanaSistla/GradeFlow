@@ -1006,6 +1006,50 @@ export async function bulkAddStudentsToClass(req: AuthRequest, res: Response) {
 }
 
 /**
+ * Delete batch from department
+ */
+export async function deleteBatchFromDepartment(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId, batchId } = req.params;
+
+    // Check if batch exists
+    const batch = await Batch.findOne({
+      _id: batchId,
+      departmentId
+    });
+
+    if (!batch) {
+      return res.status(404).json({ error: 'Batch not found' });
+    }
+
+    // Find all sections in this batch
+    const sections = await Section.find({ batchId });
+
+    // Delete all students in these sections
+    for (const section of sections) {
+      // Delete associated auth records for students
+      await UserAuth.deleteMany({
+        role: 'STUDENT',
+        referenceId: { $in: section.students }
+      });
+
+      // Delete students
+      await Student.deleteMany({ _id: { $in: section.students } });
+    }
+
+    // Delete all sections in this batch
+    await Section.deleteMany({ batchId });
+
+    // Delete batch
+    await Batch.findByIdAndDelete(batchId);
+
+    res.json({ message: 'Batch and all associated sections and students deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
  * Delete student from class
  */
 export async function deleteStudentFromClass(req: AuthRequest, res: Response) {

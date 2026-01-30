@@ -566,6 +566,31 @@ const DepartmentPage = () => {
     }
   };
 
+  const handleDeleteBatch = async (batchId: string) => {
+    if (!department) return;
+
+    if (!confirm('Are you sure you want to delete this batch? This will permanently remove the batch, all its sections, and all students in those sections.')) return;
+
+    try {
+      await apiService.request(`/admin/departments/${department._id}/batches/${batchId}`, {
+        method: 'DELETE',
+      });
+      toast({
+        title: "Success",
+        description: "Batch deleted successfully",
+      });
+      loadBatches();
+      setSelectedBatch("all");
+      setSelectedClass(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete batch",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleAddBatch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!department) return;
@@ -1406,35 +1431,50 @@ const DepartmentPage = () => {
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Student Sections</h2>
               {selectedBatch !== "all" && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Section
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Add New Section</DialogTitle>
-                      <DialogDescription>
-                        Create a new student section (e.g., IT1, IT2, CSE-A).
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleAddClass} className="space-y-4">
-                      <div>
-                        <Label htmlFor="class-section">Section Name</Label>
-                        <Input
-                          id="class-section"
-                          value={newClass.section}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewClass({...newClass, section: e.target.value})}
-                          placeholder="e.g., IT1"
-                          required
-                        />
-                      </div>
-                      <Button type="submit" className="w-full">Add Section</Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
+                <div className="flex space-x-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Section
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Add New Section</DialogTitle>
+                        <DialogDescription>
+                          Create a new student section (e.g., IT1, IT2, CSE-A).
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleAddClass} className="space-y-4">
+                        <div>
+                          <Label htmlFor="class-section">Section Name</Label>
+                          <Input
+                            id="class-section"
+                            value={newClass.section}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewClass({...newClass, section: e.target.value})}
+                            placeholder="e.g., IT1"
+                            required
+                          />
+                        </div>
+                        <Button type="submit" className="w-full">Add Section</Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const batch = batches.find(b => b.name === selectedBatch);
+                      if (batch) {
+                        handleDeleteBatch(batch._id);
+                      }
+                    }}
+                    className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
               )}
             </div>
 
@@ -1690,6 +1730,15 @@ const DepartmentPage = () => {
               </form>
             </DialogContent>
           </Dialog>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDeleteClass(selectedClass._id)}
+            className="text-red-600 hover:text-red-800 hover:bg-red-50"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete
+          </Button>
         </div>
       </div>
     </div>
