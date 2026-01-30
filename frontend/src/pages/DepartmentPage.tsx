@@ -812,6 +812,26 @@ const DepartmentPage = () => {
                         Upload an Excel file with faculty data. Expected columns: Name, Email, Mobile, Faculty ID, Role
                       </DialogDescription>
                     </DialogHeader>
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <p className="text-sm text-blue-800 mb-2">
+                        <strong>Download sample format:</strong>
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = '/sample-faculty.csv';
+                          link.download = 'sample-faculty.csv';
+                          link.click();
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download Sample CSV
+                      </Button>
+                    </div>
                     <form onSubmit={handleBulkAddFaculty} className="space-y-4">
                       <div>
                         <Label htmlFor="bulk-faculty-file">Excel File</Label>
@@ -976,6 +996,26 @@ const DepartmentPage = () => {
                         Upload an Excel file with subject data. Select the semester for the subjects.
                       </DialogDescription>
                     </DialogHeader>
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <p className="text-sm text-blue-800 mb-2">
+                        <strong>Download sample format:</strong>
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = '/sample-subjects.csv';
+                          link.download = 'sample-subjects.csv';
+                          link.click();
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download Sample CSV
+                      </Button>
+                    </div>
                     <div className="mt-2 text-sm bg-blue-50 p-3 rounded border border-blue-100">
                       <p className="font-medium text-blue-800 mb-1">Expected columns:</p>
                       <ul className="list-disc list-inside text-blue-700 text-xs space-y-1">
@@ -1582,16 +1622,36 @@ const DepartmentPage = () => {
                 <DialogTitle>Import Students to {selectedClass.section}</DialogTitle>
                 <DialogDescription>
                   Upload an Excel file (.xlsx, .xls) with student data.
-                  <div className="mt-2 text-sm bg-blue-50 p-3 rounded border border-blue-100">
-                    <p className="font-medium text-blue-800 mb-1">Expected format:</p>
-                    <ul className="list-disc list-inside text-blue-700 text-xs space-y-1">
-                      <li>First column: Roll Number (e.g., 160123737001)</li>
-                      <li>Second column: Full Name (e.g., John Doe)</li>
-                      <li>Include header row: "Roll Number" and "Name"</li>
-                    </ul>
-                  </div>
                 </DialogDescription>
               </DialogHeader>
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-800 mb-2">
+                  <strong>Download sample format:</strong>
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = '/sample-students.csv';
+                    link.download = 'sample-students.csv';
+                    link.click();
+                  }}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Sample CSV
+                </Button>
+              </div>
+              <div className="mb-4 text-sm bg-blue-50 p-3 rounded border border-blue-100">
+                <p className="font-medium text-blue-800 mb-1">Expected format:</p>
+                <ul className="list-disc list-inside text-blue-700 text-xs space-y-1">
+                  <li>First column: Roll Number (e.g., 160123737001)</li>
+                  <li>Second column: Full Name (e.g., John Doe)</li>
+                  <li>Include header row: "Roll Number" and "Name"</li>
+                </ul>
+              </div>
               <form onSubmit={handleBulkAddStudents} className="space-y-4">
                 <div>
                   <Label htmlFor="bulk-student-file" className="block text-sm font-medium mb-2">
