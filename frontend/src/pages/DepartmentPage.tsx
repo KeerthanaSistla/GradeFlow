@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  Building2, Users, BookOpen, GraduationCap, Plus, LogOut,
+  Building2, Users, BookOpen, GraduationCap, Plus, Settings,
   Loader2, Trash2, Edit, Upload, Search, ChevronLeft,
   ChevronRight, ArrowUpDown, Download
 } from "lucide-react";
@@ -636,11 +636,7 @@ const DepartmentPage = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userData");
-    navigate("/");
-  };
+
 
   if (loading) {
     return (
@@ -703,12 +699,9 @@ const DepartmentPage = () => {
               </div>
             </div>
             <div className="flex space-x-4">
-              <Button onClick={() => navigate('/admin')} variant="outline" className="text-white border-white hover:bg-white/20">
-                Back to Admin
-              </Button>
-              <Button onClick={handleLogout} variant="outline" className="text-white border-white hover:bg-white/20">
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+              <Button onClick={() => navigate(`/department/${departmentId}/settings`)} variant="outline" className="text-white border-white hover:bg-white/20">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
               </Button>
             </div>
           </div>

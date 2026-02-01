@@ -238,6 +238,13 @@ class ApiService {
     });
   }
 
+  async updateDepartment(departmentId: string, departmentData: Record<string, unknown>): Promise<ApiResponse> {
+    return this.request(`/admin/departments/${departmentId}`, {
+      method: 'PUT',
+      body: departmentData,
+    });
+  }
+
   async addSubjectToDepartment(departmentId: string, subjectData: Record<string, unknown>): Promise<ApiResponse> {
     return this.request(`/admin/departments/${departmentId}/subjects`, {
       method: 'POST',
