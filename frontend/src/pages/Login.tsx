@@ -43,19 +43,12 @@ const Login = () => {
     }
 
     try {
-      let response;
-
-      if (role === "department") {
-        // Department login uses departmentId and password
-        response = await apiService.departmentLogin(username, password);
-      } else {
-        // Other logins use the generic login method
-        response = await apiService.login({
-          username,
-          password
-          // Note: Removed role from login - backend determines role from user data
-        });
-      }
+      // Use the generic login method
+      const response = await apiService.login({
+        username,
+        password
+        // Note: Removed role from login - backend determines role from user data
+      });
 
       const data = response as unknown as LoginResponse;
 
@@ -95,7 +88,7 @@ const Login = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card
               className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 bg-white/10 backdrop-blur-sm border-white/20"
               onClick={() => setRole("student")}
@@ -135,18 +128,7 @@ const Login = () => {
               </CardHeader>
             </Card>
 
-            <Card
-              className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 bg-white/10 backdrop-blur-sm border-white/20"
-              onClick={() => setRole("department")}
-            >
-              <CardHeader className="text-center">
-                <Building2 className="w-12 h-12 text-white mx-auto mb-4" />
-                <CardTitle className="text-white">Department Login</CardTitle>
-                <CardDescription className="text-white/80">
-                  Access department-specific management
-                </CardDescription>
-              </CardHeader>
-            </Card>
+
           </div>
         </div>
       </div>
@@ -167,7 +149,7 @@ const Login = () => {
             )}
           </div>
           <CardTitle className="text-2xl text-center">
-            {role === "student" ? "Student" : role === "faculty" ? "Faculty" : role === "admin" ? "Admin" : "Department"} Login
+            {role === "student" ? "Student" : role === "faculty" ? "Faculty" : "Admin"} Login
           </CardTitle>
           <CardDescription className="text-center">
             Enter your credentials to access the portal
@@ -177,12 +159,12 @@ const Login = () => {
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">
-                {role === "student" ? "Roll Number" : role === "admin" ? "Username" : role === "department" ? "Department ID" : "Name"}
+                {role === "student" ? "Roll Number" : role === "admin" ? "Username" : "Name"}
               </Label>
               <Input
                 id="username"
                 type="text"
-                placeholder={role === "student" ? "Enter your roll number (e.g., 160123737001)" : role === "admin" ? "Enter your username (e.g., admin)" : role === "department" ? "Enter department ID" : "Enter your name (e.g., E. Rama Lakshmi)"}
+                placeholder={role === "student" ? "Enter your roll number (e.g., 160123737001)" : role === "admin" ? "Enter your username (e.g., admin)" : "Enter your name (e.g., E. Rama Lakshmi)"}
                 value={username}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                 required

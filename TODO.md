@@ -1,14 +1,9 @@
-# TODO: Fix Department Card Counts
+# TODO: Remove Separate Department Login
 
-## Current Issue
-- Department cards in AdminDashboard show 0 for Faculty, Subjects, and Classes
-- Backend `getDepartments` function doesn't populate related data
-- Frontend expects populated arrays for counting
-
-## Tasks
-- [x] Update `getDepartments` function in `backend/src/controllers/adminController.ts` to populate faculty, subjects, and classes
-- [ ] Test that counts update correctly in AdminDashboard
-- [ ] Verify counts match department details page
-
-## Files to Edit
-- `backend/src/controllers/adminController.ts`
+## Tasks to Complete
+- [x] Remove the Department login card from the landing page grid in Login.tsx
+- [x] Update the grid layout from 4 columns to 3 columns
+- [x] Remove department-specific login handling from the login form
+- [x] Simplify form labels and titles by removing department references
+- [x] Remove department login logic from handleLogin function
+- [x] Update navigation logic to remove department-specific routing
