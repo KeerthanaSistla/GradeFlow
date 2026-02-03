@@ -130,7 +130,69 @@ export async function getDepartments(req: AuthRequest, res: Response) {
   try {
     const departments = await Department.find().select('-passwordHash');
 
-    res.json(departments);
+    // Populate each department with related data
+    const populatedDepartments = await Promise.all(
+      departments.map(async (dept) => {
+        // Fetch related data
+        const faculty = await Faculty.find({ departmentId: dept._id }).select('-createdAt -updatedAt');
+        const rawSubjects = await (await import('../models/Subject')).default.find({ departmentId: dept._id }).select('-createdAt -updatedAt');
+        const subjects = rawSubjects.map(s => ({
+          _id: s._id,
+          code: s.subjectCode,
+          name: s.name,
+          abbreviation: s.abbreviation,
+          credits: s.credits,
+          type: s.type,
+          semester: s.semester
+        }));
+        const rawClasses = await Section.find({ departmentId: dept._id }).populate('students').populate('batchId').select('-createdAt -updatedAt');
+
+        // Transform student data to match frontend interface and calculate year/semester
+        const classes: any[] = rawClasses.map(classItem => {
+          const batch = classItem.batchId as any;
+
+          // Use stored year/semester if available, otherwise calculate
+          let year = classItem.year || 1;
+          let semester = classItem.semester || 1;
+
+          if (batch && batch.startYear && batch.endYear && (!classItem.year || !classItem.semester)) {
+            try {
+              const academicInfo = calculateAcademicInfo(batch.startYear, batch.endYear);
+              year = academicInfo.year;
+              semester = academicInfo.semester;
+            } catch (error) {
+              console.error('Error calculating academic info:', error);
+              // Keep default values
+            }
+          }
+
+          return {
+            _id: classItem._id,
+            section: classItem.name,
+            batchId: batch._id.toString(),
+            year,
+            semester,
+            students: classItem.students?.map((student: any) => ({
+              _id: student._id,
+              rollNo: student.rollNumber,
+              name: student.name,
+              email: student.email,
+              mobile: student.mobile
+            })) || []
+          };
+        });
+
+        // Populate the department object with relations
+        return {
+          ...dept.toObject(),
+          faculty,
+          subjects,
+          classes
+        };
+      })
+    );
+
+    res.json(populatedDepartments);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -218,14 +280,14 @@ export async function createDepartment(req: AuthRequest, res: Response) {
   try {
     const { name, abbreviation, password } = req.body;
 
-    if (!name) {
-      return res.status(400).json({ error: 'Department name required' });
+    if (!name || !password) {
+      return res.status(400).json({ error: 'Department name and password required' });
     }
 
     const dept = new Department({
       name,
       abbreviation,
-      passwordHash: password ? await hashPassword(password) : undefined
+      passwordHash: await hashPassword(password)
     });
 
     await dept.save();
@@ -1094,6 +1156,88 @@ export async function deleteStudentFromClass(req: AuthRequest, res: Response) {
     });
 
     res.json({ message: 'Student deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Department login
+ */
+export async function departmentLogin(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId, password } = req.body;
+
+    if (!departmentId || !password) {
+      return res.status(400).json({ error: 'Department ID and password required' });
+    }
+
+    const department = await Department.findById(departmentId);
+
+    if (!department) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    if (!department.passwordHash) {
+      return res.status(400).json({ error: 'Department password not set' });
+    }
+
+    const passwordMatch = await verifyPassword(password, department.passwordHash);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'Invalid password' });
+    }
+
+    const token = generateToken(department._id.toString(), 'DEPARTMENT');
+
+    res.json({
+      token,
+      user: {
+        _id: department._id,
+        name: department.name,
+        abbreviation: department.abbreviation,
+        role: 'department'
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Change department password
+ */
+export async function changeDepartmentPassword(req: AuthRequest, res: Response) {
+  try {
+    const { departmentId } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password required' });
+    }
+
+    const department = await Department.findById(departmentId);
+
+    if (!department) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    if (!department.passwordHash) {
+      return res.status(400).json({ error: 'Department password not set' });
+    }
+
+    const passwordMatch = await verifyPassword(currentPassword, department.passwordHash);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    // Hash new password
+    const newPasswordHash = await hashPassword(newPassword);
+    department.passwordHash = newPasswordHash;
+    await department.save();
+
+    res.json({ message: 'Password changed successfully' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

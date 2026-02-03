@@ -26,7 +26,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
  */
 export function generateToken(
   userId: string,
-  role: 'ADMIN' | 'FACULTY' | 'STUDENT'
+  role: 'ADMIN' | 'FACULTY' | 'STUDENT' | 'DEPARTMENT'
 ): string {
   return jwt.sign(
     { userId, role },
@@ -40,7 +40,7 @@ export function generateToken(
  */
 export function verifyToken(token: string): {
   userId: string;
-  role: 'ADMIN' | 'FACULTY' | 'STUDENT';
+  role: 'ADMIN' | 'FACULTY' | 'STUDENT' | 'DEPARTMENT';
 } | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;

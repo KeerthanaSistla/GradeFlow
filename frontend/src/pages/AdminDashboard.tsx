@@ -19,13 +19,16 @@ const AdminDashboard = () => {
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [departmentPassword, setDepartmentPassword] = useState("");
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [loadingPassword, setLoadingPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   // Form states
   const [newDepartment, setNewDepartment] = useState({
     name: "",
-    abbreviation: ""
+    abbreviation: "",
+    password: ""
   });
 
   useEffect(() => {
@@ -46,19 +49,81 @@ const AdminDashboard = () => {
     setShowPasswordDialog(true);
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // For now, accept any password. In real implementation, verify against backend
-    if (departmentPassword.trim()) {
-      setShowPasswordDialog(false);
-      setDepartmentPassword("");
-      navigate(`/admin/department/${selectedDepartment!._id}`);
-    } else {
+
+    if (!departmentPassword.trim()) {
       toast({
-        title: "Error",
+        title: "Validation Error",
         description: "Please enter a password",
         variant: "destructive",
       });
+      return;
+    }
+
+    if (!selectedDepartment) {
+      toast({
+        title: "Error",
+        description: "No department selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoadingPassword(true);
+    setError(null);
+
+    try {
+      await apiService.departmentLogin(selectedDepartment._id, departmentPassword);
+
+      // Store user data for department login
+      localStorage.setItem("userRole", "department");
+      localStorage.setItem("userData", JSON.stringify({
+        _id: selectedDepartment._id,
+        name: selectedDepartment.name,
+        abbreviation: selectedDepartment.abbreviation,
+        role: "department"
+      }));
+
+      toast({
+        title: "Success",
+        description: `Access granted to ${selectedDepartment.name}`,
+      });
+      setShowPasswordDialog(false);
+      setDepartmentPassword("");
+      navigate(`/admin/department/${selectedDepartment._id}`);
+    } catch (error: any) {
+      console.error('Department login error:', error);
+
+      let errorMessage = "Authentication failed";
+      let errorTitle = "Login Failed";
+
+      if (error.message) {
+        if (error.message.includes("403")) {
+          errorTitle = "Access Forbidden";
+          errorMessage = "You don't have permission to access this department";
+        } else if (error.message.includes("401")) {
+          errorTitle = "Invalid Credentials";
+          errorMessage = "The password you entered is incorrect";
+        } else if (error.message.includes("404")) {
+          errorTitle = "Department Not Found";
+          errorMessage = "The selected department could not be found";
+        } else if (error.message.includes("500")) {
+          errorTitle = "Server Error";
+          errorMessage = "A server error occurred. Please try again later";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      setError(errorMessage);
+      toast({
+        title: errorTitle,
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingPassword(false);
     }
   };
 
@@ -91,7 +156,8 @@ const AdminDashboard = () => {
       });
       setNewDepartment({
         name: "",
-        abbreviation: ""
+        abbreviation: "",
+        password: ""
       });
       loadDepartments();
     } catch (error: any) {
@@ -193,6 +259,17 @@ const AdminDashboard = () => {
                     required
                   />
                 </div>
+                <div>
+                  <Label htmlFor="department-password">Password</Label>
+                  <Input
+                    id="department-password"
+                    type="password"
+                    value={newDepartment.password}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewDepartment({...newDepartment, password: e.target.value})}
+                    placeholder="Enter department password"
+                    required
+                  />
+                </div>
                 <Button type="submit" className="w-full">Create Department</Button>
               </form>
             </DialogContent>
@@ -233,7 +310,15 @@ const AdminDashboard = () => {
         </div>
 
         {/* Password Dialog */}
-        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <Dialog open={showPasswordDialog} onOpenChange={(open) => {
+          if (!loadingPassword) {
+            setShowPasswordDialog(open);
+            if (!open) {
+              setDepartmentPassword("");
+              setError(null);
+            }
+          }
+        }}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Enter Department Password</DialogTitle>
@@ -248,12 +333,32 @@ const AdminDashboard = () => {
                   id="department-password"
                   type="password"
                   value={departmentPassword}
-                  onChange={(e) => setDepartmentPassword(e.target.value)}
+                  onChange={(e) => {
+                    setDepartmentPassword(e.target.value);
+                    if (error) setError(null);
+                  }}
                   placeholder="Enter department password"
                   required
+                  disabled={loadingPassword}
                 />
+                {error && (
+                  <p className="text-sm text-red-600 mt-1">{error}</p>
+                )}
               </div>
-              <Button type="submit" className="w-full">Access Department</Button>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loadingPassword || !departmentPassword.trim()}
+              >
+                {loadingPassword ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  "Access Department"
+                )}
+              </Button>
             </form>
           </DialogContent>
         </Dialog>

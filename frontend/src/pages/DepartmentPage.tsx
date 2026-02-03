@@ -128,6 +128,20 @@ const DepartmentPage = () => {
   const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
 
   useEffect(() => {
+    // Check if user has access to this department
+    const userRole = localStorage.getItem("userRole");
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+
+    if (userRole === "department" && userData._id !== departmentId) {
+      toast({
+        title: "Access Denied",
+        description: "You can only access your own department",
+        variant: "destructive",
+      });
+      navigate('/admin');
+      return;
+    }
+
     loadDepartment();
     loadBatches();
   }, [departmentId]);
@@ -138,9 +152,31 @@ const DepartmentPage = () => {
       setDepartment(dept);
     } catch (error: any) {
       console.error('Load department error:', error);
+
+      let errorMessage = "Failed to load department";
+      let errorTitle = "Error";
+
+      if (error.message) {
+        if (error.message.includes("403")) {
+          errorTitle = "Access Forbidden";
+          errorMessage = "You don't have permission to access this department";
+        } else if (error.message.includes("401")) {
+          errorTitle = "Authentication Required";
+          errorMessage = "Please log in again to access this department";
+        } else if (error.message.includes("404")) {
+          errorTitle = "Department Not Found";
+          errorMessage = "The requested department could not be found";
+        } else if (error.message.includes("500")) {
+          errorTitle = "Server Error";
+          errorMessage = "A server error occurred. Please try again later";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       toast({
-        title: "Error",
-        description: "Failed to load department",
+        title: errorTitle,
+        description: errorMessage,
         variant: "destructive",
       });
       navigate('/admin');

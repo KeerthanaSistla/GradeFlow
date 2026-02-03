@@ -1,16 +1,14 @@
-# TODO: Modify Add Section to only have "Section Name"
+# TODO: Fix Department Card Counts
 
-## Backend Changes
-- [ ] Update Section model to remove year and semester fields
-- [ ] Update addClassToDepartment controller to not require year and semester
-- [ ] Update getDepartmentById to exclude year and semester from classes response
+## Current Issue
+- Department cards in AdminDashboard show 0 for Faculty, Subjects, and Classes
+- Backend `getDepartments` function doesn't populate related data
+- Frontend expects populated arrays for counting
 
-## Frontend Changes
-- [ ] Update Class interface to remove year and semester
-- [ ] Update newClass state to remove year and semester
-- [ ] Update handleAddClass to not send year and semester
-- [ ] Update section display to not show year and semester
+## Tasks
+- [x] Update `getDepartments` function in `backend/src/controllers/adminController.ts` to populate faculty, subjects, and classes
+- [ ] Test that counts update correctly in AdminDashboard
+- [ ] Verify counts match department details page
 
-## Testing
-- [ ] Test section creation and display after changes
-- [ ] Ensure no other parts of the application are broken
+## Files to Edit
+- `backend/src/controllers/adminController.ts`

@@ -245,6 +245,12 @@ class ApiService {
     });
   }
 
+  async deleteDepartment(departmentId: string): Promise<ApiResponse> {
+    return this.request(`/admin/departments/${departmentId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async addSubjectToDepartment(departmentId: string, subjectData: Record<string, unknown>): Promise<ApiResponse> {
     return this.request(`/admin/departments/${departmentId}/subjects`, {
       method: 'POST',
@@ -361,6 +367,35 @@ class ApiService {
   async deleteStudent(departmentId: string, classId: string, studentId: string): Promise<ApiResponse> {
     return this.request(`/admin/departments/${departmentId}/classes/${classId}/students/${studentId}`, {
       method: 'DELETE',
+    });
+  }
+
+  // Department login
+  async departmentLogin(departmentId: string, password: string): Promise<ApiResponse> {
+    const data = await this.request('/admin/department-login', {
+      method: 'POST',
+      body: {
+        departmentId,
+        password
+      }
+    });
+
+    if ((data as Record<string, unknown>).token) {
+      this.token = (data as Record<string, unknown>).token as string;
+      localStorage.setItem('token', this.token);
+    }
+
+    return data;
+  }
+
+  // Change department password
+  async changeDepartmentPassword(departmentId: string, currentPassword: string, newPassword: string): Promise<ApiResponse> {
+    return this.request(`/admin/departments/${departmentId}/change-password`, {
+      method: 'PUT',
+      body: {
+        currentPassword,
+        newPassword
+      }
     });
   }
 }

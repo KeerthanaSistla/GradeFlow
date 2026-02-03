@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Settings, Users, BookOpen, GraduationCap, LogOut, Key, Edit } from "lucide-react";
+import { ArrowLeft, Settings, Users, BookOpen, GraduationCap, LogOut, Key, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiService, type Department } from "@/services/api";
 
@@ -15,6 +15,7 @@ const DepartmentSettings = () => {
   const [loading, setLoading] = useState(true);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showEditDetails, setShowEditDetails] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "",
     abbreviation: ""
@@ -85,8 +86,15 @@ const DepartmentSettings = () => {
       return;
     }
 
+    if (!department) return;
+
     try {
-      // TODO: Implement password change API call
+      await apiService.changeDepartmentPassword(
+        department._id,
+        passwordForm.currentPassword,
+        passwordForm.newPassword
+      );
+
       toast({
         title: "Success",
         description: "Password changed successfully",
@@ -101,6 +109,26 @@ const DepartmentSettings = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to change password",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteDepartment = async () => {
+    if (!department) return;
+
+    try {
+      await apiService.deleteDepartment(department._id);
+      toast({
+        title: "Success",
+        description: "Department deleted successfully",
+      });
+      setShowDeleteDialog(false);
+      navigate('/admin');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete department",
         variant: "destructive",
       });
     }
@@ -354,6 +382,72 @@ const DepartmentSettings = () => {
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Danger Zone */}
+          <Card className="border-red-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-red-600">
+                <Trash2 className="w-5 h-5" />
+                Danger Zone
+              </CardTitle>
+              <CardDescription>
+                Irreversible and destructive actions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+                <h4 className="font-medium text-red-900 mb-2">Delete Department</h4>
+                <p className="text-sm text-red-700 mb-4">
+                  Once you delete this department, there is no going back. This will permanently delete the department
+                  and remove all associated data including faculty, students, subjects, and classes.
+                </p>
+                <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Department
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="text-red-600">Delete Department</DialogTitle>
+                      <DialogDescription>
+                        This action cannot be undone. This will permanently delete the department "{department.name}"
+                        and all associated data.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="p-3 bg-red-50 border border-red-200 rounded">
+                        <p className="text-sm text-red-800 font-medium">This will delete:</p>
+                        <ul className="text-sm text-red-700 mt-1 list-disc list-inside">
+                          <li>{facultyCount} faculty members</li>
+                          <li>{studentCount} students</li>
+                          <li>{subjectCount} subjects</li>
+                          <li>All classes and sections</li>
+                        </ul>
+                      </div>
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowDeleteDialog(false)}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={handleDeleteDepartment}
+                          className="flex-1"
+                        >
+                          Delete Department
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -4,7 +4,7 @@ import { extractTokenFromHeader, verifyToken } from '../utils/auth';
 export interface AuthRequest extends Request {
   user?: {
     userId: string;
-    role: 'ADMIN' | 'FACULTY' | 'STUDENT';
+    role: 'ADMIN' | 'FACULTY' | 'STUDENT' | 'DEPARTMENT';
   };
 }
 
@@ -32,7 +32,19 @@ export function authMiddleware(
 export function requireRole(roles: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     const authReq = req as AuthRequest;
-    if (!authReq.user || !roles.includes(authReq.user.role)) {
+    if (!authReq.user) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    // Allow DEPARTMENT role to access admin routes for their own department
+    if (authReq.user.role === 'DEPARTMENT' && roles.includes('ADMIN')) {
+      const departmentId = req.params.departmentId;
+      if (departmentId && departmentId === authReq.user.userId) {
+        return next();
+      }
+    }
+
+    if (!roles.includes(authReq.user.role)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
     next();

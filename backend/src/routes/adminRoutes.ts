@@ -4,6 +4,9 @@ import { authMiddleware, requireRole, AuthRequest } from '../middleware/auth';
 
 // Combined middleware for admin routes
 const adminMiddleware = [authMiddleware, requireRole(['ADMIN'])];
+
+// Combined middleware for department routes
+const departmentMiddleware = [authMiddleware, requireRole(['DEPARTMENT'])];
 import {
   adminLogin,
   getDepartments,
@@ -26,7 +29,9 @@ import {
   deleteBatchFromDepartment,
   createStudentAndAddToClass,
   bulkAddStudentsToClass,
-  deleteStudentFromClass
+  deleteStudentFromClass,
+  departmentLogin,
+  changeDepartmentPassword
 } from '../controllers/adminController';
 
 const router = Router();
@@ -55,7 +60,7 @@ router.post('/login', adminLogin);
 
 // Protected (Admin only)
 // @ts-ignore - Type conflicts due to multiple express type definitions
-router.get('/departments', ...adminMiddleware, getDepartments);
+router.get('/departments', authMiddleware, requireRole(['ADMIN', 'DEPARTMENT']), getDepartments);
 // @ts-ignore - Type conflicts due to multiple express type definitions
 router.get('/departments/:departmentId', ...adminMiddleware, getDepartmentById);
 // @ts-ignore - Type conflicts due to multiple express type definitions
@@ -106,5 +111,10 @@ router.post('/departments/:departmentId/classes/:classId/create-student', ...adm
 router.post('/departments/:departmentId/classes/:classId/students/bulk', ...adminMiddleware, upload.single('excelFile'), bulkAddStudentsToClass);
 // @ts-ignore - Type conflicts due to multiple express type definitions
 router.delete('/departments/:departmentId/classes/:classId/students/:studentId', ...adminMiddleware, deleteStudentFromClass);
+
+// Department authentication
+router.post('/department-login', departmentLogin);
+// @ts-ignore - Type conflicts due to multiple express type definitions
+router.put('/departments/:departmentId/change-password', ...departmentMiddleware, changeDepartmentPassword);
 
 export default router;
